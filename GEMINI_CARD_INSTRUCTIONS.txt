@@ -1,0 +1,74 @@
+MOUSE COLONY - INSTRUCTIONS FOR READING CAGE CARDS AND ANIMAL-HOUSE LOG PAGES
+(attach this file together with the photos)
+
+Task: read every cage card and every log row in the attached photos and answer with ONLY the JSON below in a single code block, nothing else. The JSON must look exactly like this:
+
+{
+  "format": "mouse-colony-cards",
+  "version": 1,
+  "read_on": "<today, yyyy-mm-dd>",
+  "source": "<number> photos read in the Gemini chat",
+  "cards": [ ... ],
+  "events": [ ... ]
+}
+
+Rules:
+
+You read records of the Volgyi lab mouse colony (University of Pecs, Hungary) from a photo.
+The photo shows either cage cards (one or several) or a page of the animal-house log book ("EGER" sheet).
+One object per cage card in "cards", one object per
+row of the log page in "events". Leave a list empty when the photo has none of that kind.
+
+=== CAGE CARDS ===
+
+The printed Hungarian card fields:
+- "Ketrec kod" = cage code, written large, e.g. I/B/1/b (Roman numeral room / rack letter / shelf number / position
+  letter). A handwritten "1" often looks like "/1" or "l" - write it as 1. Use the form I/B/1/b.
+- "Labor", "Kutatasvezeto" = lab and PI: ignore.
+- "Egerek szama" = number of mice. Earlier counts are crossed out; use the LAST one that is not crossed out.
+  If you are not sure which is current, put "count" in "uncertain".
+- "Nem" = sex: the female sign = "F", the male sign = "M", both signs or "par"/"tenyesz" = a breeding pair.
+- "Torzs" = mouse line, as written. Map it to one of the KNOWN LINES below and put the card's own spelling in
+  "line_as_written" (e.g. "Cx3CR1 x B6" -> "CX3CR1KO + Bl6"; B6/Bl6/C57 = C57Bl6J). If none fits, give the
+  written text as "line" and add "line" to "uncertain".
+- "Szarmazasi hely" = cage of origin (where the mice came from), a cage code -> "origin".
+- "Szuletes ideje" = birth date, written yy.mm.dd (26.09.04 = 2026-09-04) -> "birth" as yyyy-mm-dd.
+- "Behozatal ideje" = date they arrived in this cage, same format -> "arrived".
+- "Kiserleti procedura" = experimental procedure: put any text into "notes".
+
+Per card:
+{"cage": "...", "type": "stock" | "pair" | "empty", "line": "...", "line_as_written": "...", "sex": "M"|"F",
+ "count": n, "birth": "yyyy-mm-dd", "origin": "...", "arrived": "yyyy-mm-dd", "notes": "...",
+ "uncertain": [field names that were hard to read or ambiguous]}
+For a breeding-pair card use "type": "pair" and, if the birth dates of the parents are written,
+"males": [{"birth": "yyyy-mm-dd"}], "females": [{"birth": "..."}, ...].
+Leave out fields that are empty on the card. Never guess a value you cannot see: leave it out instead.
+If a card is too blurry to read: {"cage": "<if readable>", "unreadable": true, "notes": "why"}.
+Use the real date of today; birth and arrival dates are never in the future.
+
+=== ANIMAL-HOUSE LOG PAGE ("EGER") ===
+A table with the columns: "Datum" (date, often written on two lines: 2025 / 10.28), "Allvany/oldal/sor/doboz"
+(the cage code, same form as on the cards, e.g. II/A/4/d), "allat sorszama" (number and sex of the animals,
+e.g. "4 male-sign" or "2 female-sign 1 male-sign"), "esemeny" (the event), "sulyossag" (severity, only for kivitel,
+e.g. 4BA), "Kutato neve" (researcher), and two signature columns (ignore them).
+A vertical line drawn in a cell means "same as the row above" (ditto); a row with an empty or ditto date has the
+date of the row above. Read every row, top to bottom.
+Events: "kivitel" = animals taken out of the animal house -> "removed". "athelyez"/"athelyezes" = animals moved to
+another cage, the target cage is written under the word -> "moved". "levalaszt"/"levalasztas" = weaning, the new
+cages are written under the word -> "weaned". Animals found dead ("elpusztult", "elhullott") -> "died".
+Anything else -> "other".
+Per row:
+{"date": "yyyy-mm-dd", "cage": "...", "event": "removed" | "moved" | "weaned" | "died" | "other",
+ "event_as_written": "kivitel", "males": n, "females": n,
+ "to": [{"cage": "...", "males": n, "females": n}],   (only for moved / weaned: where the animals went;
+        when several target cages are listed, give each one the animals that went there - usually males to the
+        first and females to the second; if you cannot tell, put "to" in "uncertain")
+ "severity": "4BA", "person": "Szarka G", "notes": "...", "uncertain": [field names]}
+
+KNOWN LINES: C57Bl6J; CX3CR1KO (-/-); CX3CR1KO + Bl6; Cas9 + PV-Cre; Cx36KO + PV-Cre; FL-Cx36KO; GCaMP3-Thy1; GCaMP3-Thy1 + CarCre; PV-Cre
+KNOWN CAGE CODES: I/B/10/a, I/B/10/b, I/B/10/e, I/B/1/b, I/B/1/c, I/B/1/d, I/B/1/e, I/B/2/a, I/B/2/b, I/B/2/c, I/B/2/d, I/B/2/e, I/B/3/a, I/B/3/b, I/B/3/c, I/B/3/d, I/B/3/e, I/B/4/a, I/B/4/b, I/B/4/c, I/B/4/d, I/B/4/e, I/B/5/a, I/B/5/b, I/B/5/c, I/B/5/d, I/B/5/e, I/B/6/a, I/B/6/b, I/B/6/c, I/B/6/d, I/B/6/e, I/B/7/a, I/B/7/b, I/B/7/c, I/B/7/d, I/B/7/e, I/B/8/a, I/B/8/b, I/B/8/c, I/B/8/d, I/B/8/e, I/B/9/a, I/B/9/b, I/B/9/c, I/B/9/d, I/B/9/e, II/A/1/a, II/A/1/b, II/A/1/c, II/A/1/d, II/A/1/e, II/A/2/a, II/A/2/b, II/A/2/c, II/A/2/d, II/A/2/e, II/A/3/a, II/A/3/b, II/A/3/c, II/A/3/d, II/A/3/e, II/A/4/a, II/A/4/b, II/A/4/c, II/A/4/d, II/A/4/e, II/A/5/a, II/A/5/b, II/A/5/c, II/A/5/d, II/A/5/e, II/A/6/a, II/A/6/b, II/A/6/c, II/A/6/d, II/A/6/e, II/A/7/a, II/A/7/b, II/A/7/c, II/A/7/d, II/A/7/e, II/A/8/a, II/A/8/b, II/A/8/c, II/A/8/d, II/A/8/e, II/A/9/a, II/A/9/b, II/A/9/c, II/A/9/d, II/A/9/e
+
+Also:
+- The same card can appear in two photos (e.g. at the edge of another photo): list it only once.
+- Dates may also be written in full (2026.10.02); always output yyyy-mm-dd.
+- After the JSON, nothing else. No explanations.
