@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mouse Colony</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mouse Colony">
+<meta name="theme-color" content="#1F3A5F">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--ink:#1d2330;--mute:#667085;--line:#e3e6eb;--brand:#1F3A5F;--accent:#2563eb;
+--ok:#E2F0D9;--okink:#2E6B26;--warn:#FFE699;--warnink:#7A5A00;--bad:#F8CBAD;--badink:#8A2B0E;--info:#EDEDED;--todo:#FFF1CC;}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111418;--card:#1b2027;--ink:#e8eaee;--mute:#9aa3b2;
+--line:#2b313a;--brand:#9cc0ff;--accent:#6aa0ff;--ok:#1e3a23;--okink:#9fe0a6;--warn:#4a3d10;--warnink:#ffd76a;--bad:#4a2318;
+--badink:#ffb59b;--info:#2a2f37;--todo:#3d3416;}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+-webkit-text-size-adjust:100%}
+header{position:sticky;top:0;z-index:5;background:var(--brand);color:#fff;padding:calc(env(safe-area-inset-top) + 10px) 16px 10px;
+display:flex;align-items:center;gap:10px}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) header{background:#1F3A5F}}
+header h1{font-size:17px;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header button{background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:8px;padding:6px 10px;font-size:14px}
+#status{font-size:12px;color:var(--mute);padding:6px 16px 0}
+main{padding:8px 16px calc(84px + env(safe-area-inset-bottom))}
+nav{position:fixed;bottom:0;left:0;right:0;z-index:5;background:var(--card);border-top:1px solid var(--line);display:flex;
+padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:0;padding:9px 0 7px;font-size:12px;color:var(--mute);display:flex;flex-direction:column;
+align-items:center;gap:2px}
+nav button.on{color:var(--accent);font-weight:600}
+nav svg{width:24px;height:24px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0}
+.row{display:flex;align-items:center;gap:10px}
+.grow{flex:1;min-width:0}
+.list{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:10px 0}
+.item{display:flex;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.item .code{font-weight:700;min-width:74px}
+.sub{font-size:13px;color:var(--mute)}
+.pill{display:inline-block;font-size:12px;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.ok{background:var(--ok);color:var(--okink)}.warn{background:var(--warn);color:var(--warnink)}.bad{background:var(--bad);color:var(--badink)}
+.info{background:var(--info);color:var(--mute)}.todo{background:var(--todo);color:var(--warnink)}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;width:100%}
+label.f{display:block;font-size:13px;color:var(--mute);margin:10px 0 4px}
+.b{font:inherit;border:0;border-radius:10px;padding:11px 14px;background:var(--accent);color:#fff;font-weight:600;cursor:pointer}
+button.b2{font:inherit;border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:var(--card);color:var(--ink)}
+.b.danger{background:#c2410c}
+button:disabled{opacity:.45}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 12px;font-size:14px;white-space:nowrap}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.sheet{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.35);display:flex;align-items:flex-end}
+.sheet>div{background:var(--bg);width:100%;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;
+padding:14px 16px calc(18px + env(safe-area-inset-bottom))}
+.sheet h2{font-size:18px;margin:4px 0 8px}
+.chk{width:22px;height:22px;flex:none}
+.muted{color:var(--mute)}
+.err{color:#b42318}
+.busy{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}
+.busy>div{background:var(--card);border-radius:12px;padding:18px 22px;max-width:80%}
+.spin{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp 0.9s linear infinite;
+display:inline-block;vertical-align:middle;margin-right:10px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.rv .item{align-items:flex-start}
+.rv .item.off{opacity:.55}
+.gtgrid select{width:auto;padding:6px}
+small.k{font-size:12px;color:var(--mute)}
+h3{font-size:15px;margin:16px 0 6px}
+</style>
+</head>
+<body>
+<header><h1 id="title">Mouse Colony</h1><button id="reloadBtn" onclick="reload()">Reload</button></header>
+<div id="status"></div>
+<main id="main"></main>
+<nav id="nav">
+  <button data-tab="cages" onclick="go('cages')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/></svg>Cages</button>
+  <button data-tab="pairs" onclick="go('pairs')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M3 20c0-3 2-5 5-5s5 2 5 5M11 20c0-3 2-5 5-5s5 2 5 5"/></svg>Breeders</button>
+  <button data-tab="photo" onclick="go('photo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="4"/></svg>Photo</button>
+  <button data-tab="todo" onclick="go('todo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>Genotype</button>
+  <button data-tab="more" onclick="go('more')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</button>
+</nav>
+<div id="layer"></div>
+<script>
+'use strict';
+/* ====================================================================================================
+   Mouse Colony - phone app. Reads and writes the same Google Sheet as the desktop program, in the same
+   layout (sheets Breeders, Pairs, Cages, Mice, Lines, Settings, Procedures, Terminated, Imported events).
+   ==================================================================================================== */
+const APP_VERSION = '1.0';
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets openid email';
+const GEMINI_DEFAULT_MODEL = 'gemini-3.8-flash', GEMINI_FALLBACK_MODEL = 'gemini-flash-latest';
+const EAR_MARKS = ['none','L','R','LR','L2','R2','L2R','LR2','L2R2'];
+const GT_SHORT = {hom:'+/+', het:'+/-', wt:'-/-', mixed:'mixed', '?':'?'};
+const GT_LABEL = {'?':'? (not tested)', hom:'+/+ (homo +)', het:'+/- (het)', wt:'-/- (homo -)'};
+const OUTCOMES = ['Terminated - experiment','Terminated - tissue / perfusion','Culled - over age','Culled - wrong genotype',
+  'Culled - surplus','Culled - health','Found dead','Transferred out'];
+const DEFAULT_LOCI = {'PV-Cre':'PV-Cre','GCaMP3-Thy1':'Thy1-GCaMP3','FL-Cx36KO':'Cx36-flox','Cx36KO + PV-Cre':'Cx36-flox; PV-Cre',
+  'CX3CR1KO (-/-)':'Cx3cr1-KO','CX3CR1KO + Bl6':'Cx3cr1-KO','GCaMP3-Thy1 + CarCre':'Thy1-GCaMP3; CarCre','Cas9 + PV-Cre':'Cas9; PV-Cre','C57Bl6J':''};
+const EVENTS_SHEET = 'Imported events', EVENTS_HEAD = ['Key','Date','Cage','Event','Details','Imported on','By'];
+const EVENT_WORDS = {'kivitel':'removed','kivét':'removed','kivetel':'removed','áthelyez':'moved','athelyez':'moved',
+  'leválaszt':'weaned','levalaszt':'weaned','elpusztult':'died','elhullott':'died'};
+const SHEETS = {Settings:'A1:C12', Lines:'A1:N', Breeders:'A1:N', Pairs:'A1:H', Cages:'A1:N', Mice:'A1:N', Procedures:'A1:K',
+  Terminated:'A1:A', [EVENTS_SHEET]:'A1:G'};
+
+/* ---------------- small helpers ---------------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const S_ = v => (v === null || v === undefined) ? '' : String(v).trim();
+function store(k, v){ try{ if(v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); localStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } }
+function todayISO(){ const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+function serialToISO(n){ const ms = Date.UTC(1899,11,30) + Math.round(n*86400000); return new Date(ms).toISOString().slice(0,10); }
+function toISO(v){                    // a cell value -> 'yyyy-mm-dd' or ''
+  if (v === null || v === undefined || v === '') return '';
+  if (typeof v === 'number') return serialToISO(v);
+  return cardDate(v) || '';
+}
+function cardDate(v){                 // '26.09.04', '2026.10.02', '2026-10-02' -> iso
+  if (!v) return '';
+  let t = String(v).trim().replace(/\./g,'-').replace(/\s/g,'').replace(/^-+|-+$/g,'');
+  let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/) || t.match(/^(\d{2})-(\d{1,2})-(\d{1,2})$/);
+  if (!m) return '';
+  let y = +m[1]; if (y < 100) y += 2000;
+  const d = new Date(Date.UTC(y, +m[2]-1, +m[3]));
+  if (isNaN(d) || d.getUTCMonth() !== +m[2]-1) return '';
+  return d.toISOString().slice(0,10);
+}
+function days(a, b){ return Math.round((Date.parse(b) - Date.parse(a)) / 86400000); }
+function addDays(iso, n){ return new Date(Date.parse(iso) + n*86400000).toISOString().slice(0,10); }
+function months(d){ return d === null ? '' : (d/30.44).toFixed(1) + ' mo'; }
+function parseGt(t){ const o = {}; for (const p of String(t||'').split(';')) { const i = p.indexOf(':'); if (i > 0) { const k = p.slice(0,i).trim(); if (k) o[k] = p.slice(i+1).trim().toLowerCase() || '?'; } } return o; }
+function formatGt(d){ return Object.entries(d||{}).filter(([k,v]) => v && v !== '?').map(([k,v]) => `${k}: ${v}`).join('; '); }
+function gtPretty(d){ return Object.entries(d||{}).map(([k,v]) => `${k} ${GT_SHORT[v.replace('*','')] || v}${v.endsWith('*')?'*':''}`).join('; '); }
+function normCage(text){
+  const t = String(text||'').replace(/[\s/\\|.\-]/g,'');
+  const m = t.match(/^(I{1,3}|IV|V|1{1,3})([A-Za-z])(\d+)([A-Za-z])$/);
+  if (!m) return t;
+  const rack = {'1':'I','11':'II','111':'III'}[m[1]] || m[1].toUpperCase();
+  return `${rack}${m[2].toUpperCase()}${m[3]}${m[4].toLowerCase()}`;
+}
+function cardName(c){ const m = String(c||'').match(/^(I{1,3}|IV|V)([A-Z])(\d+)([a-z])$/); return m ? `${m[1]}/${m[2]}/${m[3]}/${m[4]}` : (c||''); }
+function colLetter(c){ let s = ''; while (c > 0) { const r = (c-1) % 26; s = String.fromCharCode(65+r) + s; c = Math.floor((c-1)/26); } return s; }
+function mendel(a, b){
+  const p = {hom:1, het:.5, wt:0}, pm = p[a], pf = p[b];
+  if (pm === undefined || pf === undefined) return null;
+  const r = {hom:pm*pf, het:pm*(1-pf)+pf*(1-pm), wt:(1-pm)*(1-pf)};
+  return Object.fromEntries(Object.entries(r).filter(([k,v]) => v > 0));
+}
+
+/* ---------------- configuration ---------------- */
+let cfg = Object.assign({sheetId:'', clientId:'', gemKey:'', model:GEMINI_DEFAULT_MODEL, user:''}, store('mc_cfg') || {});
+(function fromUrl(){                  // setup link from a colleague: ?sheet=...&client=...
+  const q = new URLSearchParams(location.search);
+  let changed = false;
+  if (q.get('sheet')) { cfg.sheetId = sheetIdFrom(q.get('sheet')); changed = true; }
+  if (q.get('client')) { cfg.clientId = q.get('client'); changed = true; }
+  if (changed) { store('mc_cfg', cfg); history.replaceState(null, '', location.pathname + (q.get('demo') ? '?demo=1' : '')); }
+})();
+function sheetIdFrom(t){ const m = String(t||'').match(/\/spreadsheets\/d\/([A-Za-z0-9_-]+)/); return m ? m[1] : String(t||'').trim(); }
+const DEMO = new URLSearchParams(location.search).get('demo');
+
+/* ---------------- Google sign-in (redirect, works in home-screen apps) ---------------- */
+let token = store('mc_token');        // {access, exp, email}
+(function tokenFromHash(){
+  if (!location.hash.includes('access_token=')) return;
+  const h = new URLSearchParams(location.hash.slice(1));
+  token = {access: h.get('access_token'), exp: Date.now() + (+h.get('expires_in') || 3600) * 1000, email: (token && token.email) || ''};
+  store('mc_token', token);
+  history.replaceState(null, '', location.pathname + location.search);
+})();
+function tokenOk(minLeftMs){ return DEMO || (token && token.access && token.exp - Date.now() > (minLeftMs || 60000)); }
+function signIn(){
+  if (!cfg.clientId) { toast('Enter the web login ID in Settings first.'); go('more'); return; }
+  const redirect = location.origin + location.pathname.replace(/index\.html$/, '');
+  const u = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({client_id: cfg.clientId, redirect_uri: redirect,
+    response_type: 'token', scope: SCOPES, include_granted_scopes: 'true', ...(token && token.email ? {login_hint: token.email} : {})});
+  location.href = u;
+}
+function signOut(){ token = null; store('mc_token', null); render(); }
+
+/* ---------------- Sheets backend ---------------- */
+class SheetsBackend {
+  constructor(id){ this.id = id; }
+  async call(path, opt = {}){
+    if (!tokenOk(5000)) throw new AuthError('Sign in with Google again.');
+    const r = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + this.id + path, Object.assign({}, opt,
+      {headers: {'Authorization': 'Bearer ' + token.access, 'Content-Type': 'application/json'}}));
+    if (r.status === 401) { token = null; store('mc_token', null); throw new AuthError('The Google sign-in has expired. Sign in again.'); }
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const m = (j.error && j.error.message) || r.statusText;
+      if (r.status === 403) throw new Error('No access to the sheet (' + m + '). Ask the owner to share it with ' + (token.email || 'your Google account') + ' as Editor.');
+      if (r.status === 404) throw new Error('No Google Sheet with this link (check Settings).');
+      throw new Error('Google error ' + r.status + ': ' + m);
+    }
+    return j;
+  }
+  async meta(){
+    const j = await this.call('?fields=properties.title,sheets.properties(title,sheetId,gridProperties)');
+    return {title: j.properties.title, sheets: Object.fromEntries(j.sheets.map(s => [s.properties.title,
+      {id: s.properties.sheetId, rows: s.properties.gridProperties.rowCount, cols: s.properties.gridProperties.columnCount}]))};
+  }
+  async read(titles){
+    const q = titles.map(t => 'ranges=' + encodeURIComponent(`'${t.replace(/'/g,"''")}'!${SHEETS[t] || 'A1:Z'}`)).join('&');
+    const j = await this.call('/values:batchGet?' + q + '&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER');
+    const out = {}; titles.forEach((t, i) => out[t] = (j.valueRanges[i] && j.valueRanges[i].values) || []); return out;
+  }
+  async structure(requests){ if (requests.length) await this.call(':batchUpdate', {method: 'POST', body: JSON.stringify({requests})}); }
+  async write(data){
+    for (let i = 0; i < data.length; i += 400)
+      await this.call('/values:batchUpdate', {method: 'POST', body: JSON.stringify({valueInputOption: 'USER_ENTERED', data: data.slice(i, i+400)})});
+  }
+  async appendLog(row){
+    await this.call(`/values/${encodeURIComponent("'ChangeLog'!A1")}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+      {method: 'POST', body: JSON.stringify({values: [row]})});
+  }
+}
+class AuthError extends Error {}
+class DemoBackend {                   // ?demo=1 - made-up colony in this browser only
+  constructor(){ this.wb = null; }
+  async load(){ if (!this.wb) { const saved = store('mc_demo'); this.wb = saved || await (await fetch('demo.json')).json(); } }
+  async meta(){ await this.load(); return {title: 'DEMO colony (not real data)', sheets: Object.fromEntries(Object.keys(this.wb).map((t, i) => [t, {id: i, rows: 5000, cols: 26}]))}; }
+  async read(titles){ await this.load(); const o = {}; for (const t of titles) o[t] = JSON.parse(JSON.stringify(this.wb[t] || [])); return o; }
+  async structure(requests){ for (const r of requests) if (r.addSheet) this.wb[r.addSheet.properties.title] = []; }
+  async write(data){
+    for (const d of data) {
+      const m = d.range.match(/^'(.+)'!([A-Z]+)(\d+)(?::([A-Z]+)(\d+))?$/); const t = m[1].replace(/''/g,"'");
+      const c0 = colNum(m[2]), r0 = +m[3]; const ws = this.wb[t] || (this.wb[t] = []);
+      d.values.forEach((row, i) => row.forEach((v, j) => { const R = r0 - 1 + i, C = c0 - 1 + j; while (ws.length <= R) ws.push([]);
+        while (ws[R].length <= C) ws[R].push(''); ws[R][C] = demoValue(v); }));
+    }
+    store('mc_demo', this.wb);
+  }
+  async appendLog(row){ (this.wb.ChangeLog || (this.wb.ChangeLog = [['When','Who','Computer','Changes']])).push(row); store('mc_demo', this.wb); }
+}
+function colNum(s){ let n = 0; for (const ch of s) n = n*26 + ch.charCodeAt(0) - 64; return n; }
+function demoValue(v){ if (typeof v !== 'string') return v; if (v.startsWith("'")) return v.slice(1);
+  const iso = v.match(/^\d{4}-\d{2}-\d{2}$/); if (iso) return (Date.parse(v) - Date.UTC(1899,11,30)) / 86400000; return v; }
+let backend = null;
+function makeBackend(){ backend = DEMO ? new DemoBackend() : (cfg.sheetId ? new SheetsBackend(cfg.sheetId) : null); }
+
+/* ---------------- the colony model (same rules as the desktop program) ---------------- */
+class Colony {
+  constructor(meta, v){
+    this.meta = meta; this.v = v; this.today = todayISO();
+    const st = {MaxAge:365, WarnDays:60, MinAge:49, StartMax:180};
+    ['MaxAge','WarnDays','MinAge','StartMax'].forEach((k, i) => { const x = (v.Settings[i+1] || [])[1]; if (typeof x === 'number') st[k] = x; });
+    this.settings = st;
+    const lh = v.Lines[0] || [];
+    this.lines = {};
+    for (const r of v.Lines.slice(1)) { const n = S_(r[0]); if (!n) continue;
+      const loci = lh[12] ? S_(r[12]) : (DEFAULT_LOCI[n] || '');
+      this.lines[n] = {loci: loci.split(';').map(x => x.trim()).filter(Boolean), parts: S_(r[13]).split(';').map(x => x.trim()).filter(Boolean)}; }
+    this.breeders = {};
+    v.Breeders.slice(1).forEach((r, i) => { const id = S_(r[0]); if (!id) return;
+      this.breeders[id] = {row: i+2, id, line: S_(r[1]), sex: S_(r[2]).toUpperCase(), birth: toISO(r[3]), cage: S_(r[4]),
+        status: S_(r[5]) || 'Breeding', sire: S_(r[6]), dam: S_(r[7]), notes: S_(r[8]), gt: parseGt(S_(r[13]))}; });
+    this.pairs = [];
+    v.Pairs.slice(1).forEach((r, i) => { if (!S_(r[0])) return;
+      this.pairs.push({row: i+2, cage: S_(r[0]), line: S_(r[1]), m: S_(r[2]), f1: S_(r[3]), f2: S_(r[4]), setup: toISO(r[5]),
+        status: S_(r[6]) || 'Active', notes: S_(r[7])}); });
+    this.cages = []; this.cageRow = {};
+    v.Cages.slice(1).forEach((r, i) => { const n = S_(r[0]); if (!n) return; this.cageRow[n] = i+2;
+      this.cages.push({row: i+2, cage: n, line: S_(r[1]), sex: S_(r[3]).toUpperCase(), count: typeof r[4] === 'number' ? r[4] : null,
+        birth: toISO(r[5]), sire: S_(r[9]), dam: S_(r[10]), note: S_(r[11]), reserved: S_(r[12]), gt: parseGt(S_(r[13]))}); });
+    this.mice = {};
+    v.Mice.slice(1).forEach((r, i) => { const id = S_(r[0]); if (!id) return;
+      this.mice[id] = {row: i+2, id, cage: S_(r[1]), mark: S_(r[2]) || 'none', line: S_(r[3]), sex: S_(r[4]).toUpperCase(),
+        birth: toISO(r[5]), sire: S_(r[6]), dam: S_(r[7]), gt: parseGt(S_(r[8])), status: S_(r[9]) || 'Alive', since: toISO(r[10]),
+        breeder: S_(r[11]), notes: S_(r[12]), todo: ['Y','YES'].includes(S_(r[13]).toUpperCase())}; });
+    this.procs = v.Procedures.slice(1).filter(r => r.some(x => S_(x))).map(r => ({date: toISO(r[0]), cage: S_(r[1]), animal: S_(r[2]),
+      line: S_(r[3]), sex: S_(r[4]), birth: toISO(r[6]), proc: S_(r[7]), details: S_(r[8]), person: S_(r[9])}));
+    this.eventKeys = {};
+    for (const r of (v[EVENTS_SHEET] || []).slice(1)) if (S_(r[0])) this.eventKeys[S_(r[0])] = toISO(r[5]) || S_(r[5]);
+  }
+  cage(n){ return this.cages.find(c => c.cage === n) || null; }
+  activePair(c){ return this.pairs.find(p => p.cage === c && p.status === 'Active') || null; }
+  members(p){ return [p.m, p.f1, p.f2].filter(Boolean); }
+  markKey(m){ const i = EAR_MARKS.indexOf(m); return i < 0 ? EAR_MARKS.length : i; }
+  miceIn(c){ return Object.values(this.mice).filter(m => m.cage === c && m.status === 'Alive')
+    .sort((a, b) => this.markKey(a.mark) - this.markKey(b.mark) || a.id.localeCompare(b.id)); }
+  freeMarks(c, n, taken){ const used = new Set([...this.miceIn(c).map(m => m.mark), ...(taken || [])]);
+    const free = EAR_MARKS.filter(x => !used.has(x)); let k = EAR_MARKS.length; while (free.length < n) free.push('#' + (++k)); return free.slice(0, n); }
+  age(b){ return b ? days(b, this.today) : null; }
+  flag(a, gone){ if (gone) return '-'; const s = this.settings; if (a === null) return 'NO DATE'; if (a >= s.MaxAge) return 'OVER AGE';
+    if (a >= s.MaxAge - s.WarnDays) return 'Replace soon'; if (a < s.MinAge) return 'Too young'; return 'OK'; }
+  pairOldest(p){ const a = this.members(p).map(x => this.breeders[x]).filter(b => b && b.birth).map(b => this.age(b.birth)); return a.length ? Math.max(...a) : null; }
+  pairFlag(p){ const a = this.pairOldest(p); if (a === null) return 'NO DATE'; const s = this.settings;
+    return a >= s.MaxAge ? 'OVER AGE' : a >= s.MaxAge - s.WarnDays ? 'Replace soon' : 'OK'; }
+  replaceBy(p){ const a = this.pairOldest(p); return a === null ? '' : addDays(this.today, this.settings.MaxAge - a); }
+  lociFor(...ls){ const o = []; for (const l of ls) for (const x of (this.lines[l] || {}).loci || []) if (!o.includes(x)) o.push(x); return o; }
+  unit(u){
+    if (u.startsWith('mouse:')) { const m = this.mice[u.slice(6)]; return m && {line: m.line, gt: m.gt}; }
+    const b = this.breeders[u]; return b && {line: b.line, gt: b.gt || {}};
+  }
+  parents(u){
+    if (u.startsWith('mouse:')) { const m = this.mice[u.slice(6)]; if (m && this.breeders[m.breeder]) { const b = this.breeders[m.breeder]; return [b.sire, b.dam]; }
+      return m ? [m.sire, m.dam] : ['', '']; }
+    const b = this.breeders[u]; return b ? [b.sire, b.dam] : ['', ''];
+  }
+  gtOf(u, locus, depth = 0){
+    const inf = u && this.unit(u); if (!inf) return '?';
+    if (inf.line === 'C57Bl6J') return 'wt';
+    const v = inf.gt[locus]; if (v && v !== '?') return v;
+    if (!this.lociFor(inf.line).includes(locus)) return 'wt';
+    const [s, d] = this.parents(u);
+    if (s && d && depth < 6) { const r = mendel(this.gtOf(s, locus, depth+1), this.gtOf(d, locus, depth+1)); if (r && Object.keys(r).length === 1) return Object.keys(r)[0]; }
+    return '?';
+  }
+  mouseGt(id){ const m = this.mice[id]; if (!m || m.line === 'C57Bl6J') return {}; const o = {};
+    for (const lc of this.lociFor(m.line)) { const v = this.gtOf('mouse:' + id, lc); o[lc] = v + (v !== '?' && !m.gt[lc] ? '*' : ''); } return o; }
+  gtUnknown(id){ return Object.values(this.mouseGt(id)).some(v => v === '?'); }
+  procsForMouse(id){ const m = this.mice[id];
+    return this.procs.filter(p => p.animal.split(/[,\s]+/).includes(id) || (!p.animal && p.cage === m.cage && p.birth === m.birth && p.sex !== 'pair'))
+      .sort((a, b) => (a.date || '').localeCompare(b.date || '')); }
+  nextMouseNum(){ return Math.max(0, ...Object.keys(this.mice).filter(x => /^M\d+$/.test(x)).map(x => +x.slice(1))) + 1; }
+  firstFree(sheet){ const rows = this.v[sheet] || []; let r = 2; while (r - 1 < rows.length && S_((rows[r-1] || [])[0]) !== '') r++; return r; }
+}
+
+/* ---------------- writing: a change set applied in one go ---------------- */
+class Changes {
+  constructor(col){ this.col = col; this.cells = {}; this.free = {}; this.newSheets = []; this.summary = []; }
+  set(sheet, row, c, v){ (this.cells[sheet] || (this.cells[sheet] = {}))[row + ':' + c] = [row, c, v]; }
+  row(sheet, row, vals, c0 = 1){ vals.forEach((v, i) => { if (v !== undefined) this.set(sheet, row, c0 + i, v); }); }
+  append(sheet, vals){ if (!(sheet in this.free)) this.free[sheet] = this.col.firstFree(sheet);
+    const r = this.free[sheet]; this.free[sheet] = r + 1;
+    // the next free row: skip rows already filled further down
+    const rows = this.col.v[sheet] || []; while (this.free[sheet] - 1 < rows.length && S_((rows[this.free[sheet]-1] || [])[0]) !== '') this.free[sheet]++;
+    this.row(sheet, r, vals); return r; }
+  // the cage row of the Cages sheet (cols: 2 line, 4 sex, 5 count, 6 birth, 10 sire, 11 dam, 12 note, 14 genotype)
+  cage(name, o){ const r = this.col.cageRow[name]; if (!r) throw new Error('Cage ' + cardName(name) + ' is not on the Cages sheet.');
+    if (o.clear) { for (const c of [2,3,4,5,6,10,11,12,13,14]) this.set('Cages', r, c, null); return; }
+    const map = {line:2, sex:4, count:5, birth:6, sire:10, dam:11, note:12};
+    for (const [k, c] of Object.entries(map)) if (o[k] !== undefined) this.set('Cages', r, c, k === 'birth' && o[k] ? {d: o[k]} : (o[k] === '' ? null : o[k])); }
+  mouse(m){ this.row('Mice', m.row, [m.id, m.cage, m.mark, m.line, m.sex, m.birth ? {d: m.birth} : null, m.sire || null, m.dam || null,
+    formatGt(m.gt) || null, m.status, m.since ? {d: m.since} : null, m.breeder || null, m.notes || null, m.todo ? 'Y' : null]); }
+  syncCount(cage){ const c = this.col; if (c.activePair(cage)) return; const n = c.miceIn(cage).length;
+    if (n === 0) this.cage(cage, {clear: true}); else this.cage(cage, {count: n}); const cc = c.cage(cage); if (cc) cc.count = n; }
+  data(){
+    const out = [];
+    for (const [sheet, cells] of Object.entries(this.cells)) {
+      const list = Object.values(cells).sort((a, b) => a[0] - b[0] || a[1] - b[1]); let run = [];
+      const flush = () => { if (!run.length) return; const q = sheet.replace(/'/g, "''");
+        out.push({range: `'${q}'!${colLetter(run[0][1])}${run[0][0]}:${colLetter(run[run.length-1][1])}${run[0][0]}`, values: [run.map(x => cellOut(x[2]))]}); run = []; };
+      for (const x of list) { if (run.length && x[0] === run[run.length-1][0] && x[1] === run[run.length-1][1] + 1) run.push(x); else { flush(); run = [x]; } }
+      flush();
+    }
+    return out;
+  }
+  maxRow(sheet){ return Math.max(0, ...Object.values(this.cells[sheet] || {}).map(x => x[0])); }
+}
+function cellOut(v){ if (v === null || v === undefined) return ''; if (typeof v === 'object' && v.d) return v.d;
+  if (typeof v === 'number' || typeof v === 'boolean') return v; const s = String(v); return s === '' || s.startsWith('=') ? s : "'" + s; }
+
+let col = null, loadedAt = null;
+async function fetchColony(){
+  const meta = await backend.meta();
+  const titles = Object.keys(SHEETS).filter(t => meta.sheets[t]);
+  for (const need of ['Breeders','Pairs','Cages','Mice','Lines','Settings']) if (!meta.sheets[need])
+    throw new Error('This Google Sheet is not the colony workbook (no "' + need + '" sheet).');
+  const v = await backend.read(titles);
+  for (const t of Object.keys(SHEETS)) if (!v[t]) v[t] = [];
+  return new Colony(meta, v);
+}
+/* Every change: reload the latest sheet, build the change on it, write it, reload. */
+async function commit(label, build){
+  return busy(label, async () => {
+    const fresh = await fetchColony();
+    const ch = new Changes(fresh);
+    const result = await build(fresh, ch);
+    if (!Object.keys(ch.cells).length) return result;
+    const req = [];
+    for (const t of ch.newSheets) if (!fresh.meta.sheets[t]) req.push({addSheet: {properties: {title: t, gridProperties: {rowCount: 1000, columnCount: 12}}}});
+    const newLog = !fresh.meta.sheets.ChangeLog;
+    if (newLog) req.push({addSheet: {properties: {title: 'ChangeLog', gridProperties: {rowCount: 1000, columnCount: 6}}}});
+    for (const [t, info] of Object.entries(fresh.meta.sheets)) { const need = ch.maxRow(t);
+      if (need > info.rows) req.push({appendDimension: {sheetId: info.id, dimension: 'ROWS', length: need - info.rows + 50}}); }
+    await backend.structure(req);
+    await backend.write(ch.data());
+    if (newLog) await backend.write([{range: "'ChangeLog'!A1:D1", values: [['When','Who','Computer','Changes']]}]);
+    try { await backend.appendLog([new Date().toISOString().slice(0,19).replace('T',' '), (cfg.user || '?') + (token && token.email ? ` (${token.email})` : ''),
+      'phone', ch.summary.join('; ').slice(0, 400) || label]); } catch (e) { /* the change itself is saved */ }
+    col = await fetchColony(); loadedAt = new Date();
+    return result;
+  });
+}
+
+/* ---- actions (mirror the desktop program) ---- */
+function termMice(col, ch, ids, o){
+  const cages = new Set();
+  for (const id of ids) { const m = col.mice[id]; if (!m || m.status !== 'Alive') continue;
+    const g = {}; for (const [k, v] of Object.entries(col.mouseGt(id))) if (v !== '?') g[k] = v.replace('*','');
+    const procs = col.procsForMouse(id).map(p => `${p.date} ${p.proc}` + (p.details ? ` (${p.details})` : '') + (p.person ? ` [${p.person}]` : '')).join('; ');
+    ch.append('Terminated', [{d: o.date}, m.cage, `${id} (${m.mark})`, m.line, m.sex, 1, m.birth ? {d: m.birth} : null,
+      m.birth ? days(m.birth, o.date) : null, o.outcome, o.reason || null, null, o.person || null, m.sire || null, m.dam || null,
+      formatGt(g) || null, procs || null, o.notes || null]);
+    m.status = 'Terminated'; m.since = o.date; ch.mouse(m); cages.add(m.cage); }
+  for (const c of cages) ch.syncCount(c);
+  ch.summary.push(`terminated ${ids.length} (${[...cages].map(cardName).join(', ')})`);
+}
+function moveMice(col, ch, ids, dest){
+  if (col.activePair(dest)) throw new Error(cardName(dest) + ' is a breeding cage - change the pair on the desktop.');
+  if (!col.cage(dest)) throw new Error('Unknown cage ' + cardName(dest));
+  const olds = new Set();
+  for (const id of ids) { const m = col.mice[id]; if (m.cage === dest) continue; olds.add(m.cage);
+    if (!col.miceIn(dest).length) ch.cage(dest, {line: m.line, sex: m.sex, birth: m.birth || '', sire: m.sire || '', dam: m.dam || '', note: ''});
+    const taken = col.miceIn(dest).map(x => x.mark); m.cage = dest;
+    if (taken.includes(m.mark)) m.mark = col.freeMarks(dest, 1)[0];
+    ch.mouse(m); }
+  for (const c of [...olds, dest]) ch.syncCount(c);
+  ch.summary.push(`moved ${ids.length} to ${cardName(dest)}`);
+}
+function recordGenotypes(col, ch, results, o){
+  const byCage = {};
+  for (const [id, g] of Object.entries(results)) { const m = col.mice[id];
+    for (const [k, v] of Object.entries(g)) { if (v && v !== '?') m.gt[k] = v; else delete m.gt[k]; }
+    m.todo = col.gtUnknown(id); ch.mouse(m); (byCage[m.cage] || (byCage[m.cage] = [])).push(id); }
+  for (const [cage, ids] of Object.entries(byCage)) { const m0 = col.mice[ids[0]];
+    const det = ids.map(x => `${x} (${col.mice[x].mark}) ${formatGt(col.mice[x].gt) || '?'}`).join(', ');
+    ch.append('Procedures', [{d: o.date}, cage, ids.join(', '), m0.line, m0.sex, ids.length, m0.birth ? {d: m0.birth} : null,
+      'Genotyping (tail/ear)', det, o.person || null, null]); }
+  ch.summary.push(`genotypes for ${Object.keys(results).length} mice`);
+}
+function addMice(col, ch, cage, n, line, sex, birth, sire, dam){
+  const c = col.cage(cage);
+  if (!col.miceIn(cage).length && (!c || !c.line)) { ch.cage(cage, {line, sex, birth: birth || '', sire: sire || '', dam: dam || ''}); if (c) Object.assign(c, {line, sex}); }
+  const marks = col.freeMarks(cage, n); let num = col.nextMouseNum(); const ids = [];
+  for (const mark of marks) { const id = 'M' + String(num++).padStart(4, '0');
+    const m = {row: 0, id, cage, mark, line, sex, birth: birth || '', sire: sire || '', dam: dam || '', gt: {}, status: 'Alive', since: col.today, breeder: '', notes: '', todo: false};
+    col.mice[id] = m; m.todo = col.gtUnknown(id); m.row = ch.append('Mice', []); ch.mouse(m); ids.push(id); }
+  ch.syncCount(cage);
+  return ids;
+}
+
+/* ---- cage cards (same comparison as the desktop review screen) ---- */
+function compareCards(col, data){
+  const out = [];
+  const add = (cage, what, app, card, kind, apply = true, value = null) => out.push({cage, what, app: S_(app), card: S_(card), kind, apply: apply && kind !== 'info', value});
+  for (const card of data.cards || []) {
+    const cage = normCage(card.cage); const c = col.cage(cage);
+    if (!c) { add(cage, 'Unknown cage', '', card.cage, 'info'); continue; }
+    if (card.unreadable) { add(cage, 'Card not readable', '', card.notes || '', 'info'); continue; }
+    const ctype = (card.type || (card.males || card.females ? 'pair' : !card.count ? 'empty' : 'stock')).toLowerCase();
+    const pair = col.activePair(cage), mice = col.miceIn(cage), unsure = new Set(card.uncertain || []);
+    if (ctype === 'empty') { if (mice.length || pair) add(cage, 'Card says empty', `${mice.length || col.members(pair).length} animals`, 'empty', 'info'); continue; }
+    if (ctype === 'pair') {
+      if (!pair) { add(cage, 'Card is a breeding pair, app has no pair here - set it up on the desktop', c.line || 'empty', 'pair', 'info'); continue; }
+      const mem = col.members(pair).map(x => col.breeders[x]).filter(Boolean);
+      for (const [sx, key] of [['M','males'],['F','females']]) { if (!card[key]) continue;
+        const a = mem.filter(b => b.sex === sx).map(b => b.birth).sort().join(', '), b = card[key].map(x => cardDate(x.birth)).sort().join(', ');
+        if (a !== b) add(cage, (sx === 'M' ? 'Male' : 'Female') + ' birth date(s)', a, b, 'info'); }
+      continue; }
+    if (pair) { add(cage, 'Card is a stock cage, app has a breeding pair', pair.line, card.line, 'info'); continue; }
+    const line = card.line || '', lineOk = line in col.lines, sex = S_(card.sex).toUpperCase().slice(0,1), birth = cardDate(card.birth), n = card.count;
+    if (!mice.length) {
+      if (!lineOk) { add(cage, 'New cage - line not recognised', '', `${line} (${card.line_as_written || ''})`, 'info'); continue; }
+      let sire = card.sire || '', dam = card.dam || '';
+      const p0 = card.origin ? col.activePair(normCage(card.origin)) : null;
+      if (p0 && !sire) { const fs = [p0.f1, p0.f2].filter(Boolean); sire = p0.m; dam = fs.length === 1 ? fs[0] : ''; }
+      add(cage, `New cage: ${n} ${sex}`, 'empty', `${line}, born ${birth}` + (sire ? `, parents ${sire} x ${dam || '?'}` : ''), 'new_cage',
+        true, {line, sex, n: parseInt(n) || 0, birth, sire, dam, note: card.notes || ''});
+      continue; }
+    if (line && line !== c.line) { if (lineOk) add(cage, 'Line', c.line, line, 'line', !unsure.has('line'), line);
+      else add(cage, 'Line (not a known line)', c.line, `${line} (${card.line_as_written || ''})`, 'info'); }
+    if (sex && sex !== c.sex) add(cage, 'Sex', c.sex, sex, 'sex', !unsure.has('sex'), sex);
+    if (birth && birth !== c.birth) add(cage, 'Birth date', c.birth, birth, 'birth', !unsure.has('birth'), birth);
+    if (Number.isInteger(n) && n !== mice.length) {
+      if (n > mice.length) add(cage, `Count: add ${n - mice.length} mice`, mice.length, n, 'add_mice', !unsure.has('count'), n - mice.length);
+      else add(cage, 'Count lower on card - use Kivitel for the missing mice', mice.length, n, 'info'); }
+    if (card.origin) { const o = normCage(card.origin), p0 = col.activePair(o);
+      if (p0 && !c.sire && !card.sire) { const fs = [p0.f1, p0.f2].filter(Boolean);
+        add(cage, `Parents from origin ${cardName(o)}`, '', `${p0.m} x ${fs.length === 1 ? fs[0] : '?'}`, 'parents', false, [p0.m, fs.length === 1 ? fs[0] : '']); } }
+    const note = S_(card.notes);
+    if (note && !(c.note || '').toLowerCase().includes(note.toLowerCase())) add(cage, 'Note', c.note, note, 'note', false, note);
+  }
+  return out;
+}
+function applyCards(col, ch, changes, readOn){
+  let n = 0;
+  for (const x of changes) { if (!x.apply || x.kind === 'info') continue; const c = col.cage(x.cage), v = x.value; n++;
+    if (x.kind === 'new_cage') { ch.cage(x.cage, {line: v.line, sex: v.sex, birth: v.birth || '', sire: v.sire, dam: v.dam, note: v.note}); c.line = v.line; c.sex = v.sex;
+      addMice(col, ch, x.cage, v.n, v.line, v.sex, v.birth, v.sire, v.dam); }
+    else if (x.kind === 'add_mice') addMice(col, ch, x.cage, v, c.line, c.sex, c.birth, c.sire, c.dam);
+    else if (['line','sex','birth','parents'].includes(x.kind)) { const upd = x.kind === 'parents' ? {sire: v[0], dam: v[1]} : {[x.kind]: v};
+      ch.cage(x.cage, upd); for (const m of col.miceIn(x.cage)) { Object.assign(m, upd); ch.mouse(m); } Object.assign(c, upd); }
+    else if (x.kind === 'note') ch.cage(x.cage, {note: (c.note ? c.note + '; ' : '') + v}); }
+  if (readOn && col.v.Settings.length) ch.set('Settings', 7, 2, {d: readOn});
+  ch.summary.push(`cage cards: ${n} changes`);
+}
+
+/* ---- animal-house log (kivitel / áthelyezés), same rules and the same remembered keys as the desktop ---- */
+function eventKind(ev){ const k = S_(ev.event).toLowerCase(); if (['removed','moved','weaned','died','other'].includes(k)) return k;
+  const w = S_(ev.event_as_written || ev.event).toLowerCase(); for (const [kk, v] of Object.entries(EVENT_WORDS)) if (w.startsWith(kk)) return v; return 'other'; }
+function eventKey(ev){ const to = (ev.to || []).filter(t => t && typeof t === 'object').map(t => normCage(t.cage)).join(',');
+  return [S_(ev.date), normCage(ev.cage), eventKind(ev), String(parseInt(ev.males) || 0), String(parseInt(ev.females) || 0), to].join('|'); }
+function pickMice(col, cage, males, females, claimed){
+  const mice = col.miceIn(cage).filter(m => !claimed.has(m.id)); const ids = [], short = [];
+  for (const [sx, n] of [['M', males], ['F', females]]) { if (!n) continue; const have = mice.filter(m => m.sex === sx);
+    if (have.length < n) short.push(`${n} ${sx} wanted, ${have.length} in the app`); ids.push(...have.slice(0, n).map(m => m.id)); }
+  return [ids, short.join('; ')];
+}
+function compareEvents(col, data){
+  const out = [], claimed = new Set(), got = {};
+  for (const ev of data.events || []) if (eventKind(ev) === 'moved') for (const t of ev.to || []) if (t && S_(t.cage)) {
+    const own = 'males' in t || 'females' in t; const g = got[normCage(t.cage) + '|' + S_(ev.date)] || (got[normCage(t.cage) + '|' + S_(ev.date)] = [0, 0]);
+    g[0] += own ? (+t.males || 0) : (+ev.males || 0); g[1] += own ? (+t.females || 0) : (+ev.females || 0); }
+  const newPairs = new Set(Object.entries(got).filter(([k, g]) => g[0] && g[1]).map(([k]) => k.split('|')[0]));
+  for (const ev of data.events || []) {
+    const cage = normCage(ev.cage), kind = eventKind(ev), males = parseInt(ev.males) || 0, females = parseInt(ev.females) || 0;
+    const date = cardDate(ev.date), key = eventKey(ev), written = S_(ev.event_as_written || ev.event);
+    let unsure = new Set(ev.uncertain || []);
+    const who = [males ? males + ' M' : '', females ? females + ' F' : ''].filter(Boolean).join(' ') || '?';
+    let cardTxt = `${written}: ${who}` + (unsure.size ? ` (uncertain: ${[...unsure].join(', ')})` : '');
+    const add = (what, app, k, apply = true, value = null) => out.push({cage, date, key, ev, what, app: S_(app), card: cardTxt, kind: k,
+      apply: apply && k !== 'info' && !unsure.size, value});
+    if (key in col.eventKeys) { add('Already imported', 'on ' + col.eventKeys[key], 'info'); continue; }
+    if (!date) { add('No readable date - not applied', '', 'info'); continue; }
+    if (date > col.today) { add(`Date ${date} is in the future - check the reading`, '', 'info'); continue; }
+    if (days(date, col.today) > 45) { unsure.add('date'); cardTxt += ` - OLD ROW (${days(date, col.today)} days): check it is not already in the app`; }
+    if (kind === 'weaned') { add('Leválasztás - done from the cage cards', '', 'info'); continue; }
+    if (!['removed','moved','died'].includes(kind)) { add(`"${written}" - not applied (do it by hand if needed)`, '', 'info'); continue; }
+    const c = col.cage(cage); if (!c) { add('Unknown cage', '', 'info'); continue; }
+    const pair = col.activePair(cage);
+    if (kind !== 'moved') {
+      const outcome = kind === 'died' ? 'Found dead' : 'Terminated - experiment';
+      if (pair) { add('Breeding cage: take out the breeders on the desktop', col.members(pair).join(', '), 'info'); continue; }
+      if (!col.miceIn(cage).length) { add('No individual mice in the app for this cage - do it on the desktop', `${c.count || 0}`, 'info'); continue; }
+      const [ids, problem] = pickMice(col, cage, males, females, claimed);
+      if (problem) { add(`Not enough mice (${problem})`, `${col.miceIn(cage).length} mice`, 'info'); continue; }
+      const left = col.miceIn(cage).filter(m => !claimed.has(m.id)).length;
+      add(`${kind === 'died' ? 'Found dead' : 'Taken out (kivitel)'}: ` + ids.map(i => `${i} (${col.mice[i].mark})`).join(', '),
+        `${left} ${c.sex} ${c.line}`, 'term_mice', true, {ids, outcome});
+      ids.forEach(i => claimed.add(i)); continue; }
+    const tos = (ev.to || []).filter(t => t && S_(t.cage));
+    if (!tos.length) { add('Moved - no target cage on the log', '', 'info'); continue; }
+    if (pair) { add('Breeders moved - change the pair on the desktop', col.members(pair).join(', '), 'info'); continue; }
+    for (const t of tos) { const dest = normCage(t.cage), own = 'males' in t || 'females' in t;
+      const tm = own ? (+t.males || 0) : males, tf = own ? (+t.females || 0) : females;
+      if (dest === cage) { add('Moved within the same cage - nothing to do', '', 'info'); continue; }
+      if (!col.cage(dest)) { add(`Unknown target cage ${t.cage}`, '', 'info'); continue; }
+      if (col.activePair(dest) || newPairs.has(dest)) { add(`New breeding pair in ${cardName(dest)} - set it up on the desktop (Pairing check)`, '', 'info'); continue; }
+      const [ids, problem] = pickMice(col, cage, tm, tf, claimed);
+      if (problem || !ids.length) { add(`Not enough mice to move (${problem || 'none listed'})`, `${col.miceIn(cage).length} mice`, 'info'); continue; }
+      const there = col.miceIn(dest);
+      add(`Move to ${cardName(dest)}: ` + ids.map(i => `${i} (${col.mice[i].mark})`).join(', '),
+        `${col.miceIn(cage).length} here` + (there.length ? `; ${there.length} already in ${cardName(dest)}` : ''), 'move', true, {ids, dest});
+      ids.forEach(i => claimed.add(i)); }
+  }
+  return out;
+}
+function applyEvents(col, ch, changes){
+  const logged = new Set(); let n = 0;
+  for (const x of changes) { if (!x.apply || x.kind === 'info') continue; const ev = x.ev, v = x.value;
+    if (x.kind === 'term_mice') termMice(col, ch, v.ids, {date: x.date, outcome: v.outcome, reason: ev.severity ? 'severity ' + ev.severity : '',
+      person: S_(ev.person) || cfg.user, notes: 'animal-house log: ' + S_(ev.event_as_written || ev.event)});
+    else if (x.kind === 'move') moveMice(col, ch, v.ids, v.dest);
+    if (!logged.has(x.key)) { logged.add(x.key); n++;
+      if (!col.meta.sheets[EVENTS_SHEET] && !ch.newSheets.includes(EVENTS_SHEET)) { ch.newSheets.push(EVENTS_SHEET); ch.row(EVENTS_SHEET, 1, EVENTS_HEAD); ch.free[EVENTS_SHEET] = 2; }
+      ch.append(EVENTS_SHEET, [x.key, {d: x.date}, cardName(x.cage), eventKind(ev), x.what.slice(0, 200), {d: col.today}, cfg.user || null]); } }
+  ch.summary.push(`log rows: ${n}`);
+  return n;
+}
+
+/* ---------------- Gemini photo reading (same instructions as the desktop) ---------------- */
+const CARD_PROMPT = `You read records of the Volgyi lab mouse colony (University of Pecs, Hungary) from a photo.
+The photo shows either cage cards (one or several) or a page of the animal-house log book ("EGER" sheet).
+Return ONLY JSON: {"cards": [ ... ], "events": [ ... ]} - one object per cage card in "cards", one object per
+row of the log page in "events". Leave a list empty when the photo has none of that kind.
+
+=== CAGE CARDS ===
+
+The printed Hungarian card fields:
+- "Ketrec kod" = cage code, written large, e.g. I/B/1/b (Roman numeral room / rack letter / shelf number / position
+  letter). A handwritten "1" often looks like "/1" or "l" - write it as 1. Use the form I/B/1/b.
+- "Labor", "Kutatasvezeto" = lab and PI: ignore.
+- "Egerek szama" = number of mice. Earlier counts are crossed out; use the LAST one that is not crossed out.
+  If you are not sure which is current, put "count" in "uncertain".
+- "Nem" = sex: the female sign = "F", the male sign = "M", both signs or "par"/"tenyesz" = a breeding pair.
+- "Torzs" = mouse line, as written. Map it to one of the KNOWN LINES below and put the card's own spelling in
+  "line_as_written" (e.g. "Cx3CR1 x B6" -> "CX3CR1KO + Bl6"; B6/Bl6/C57 = C57Bl6J). If none fits, give the
+  written text as "line" and add "line" to "uncertain".
+- "Szarmazasi hely" = cage of origin (where the mice came from), a cage code -> "origin".
+- "Szuletes ideje" = birth date, written yy.mm.dd (26.09.04 = 2026-09-04) -> "birth" as yyyy-mm-dd.
+- "Behozatal ideje" = date they arrived in this cage, same format -> "arrived".
+- "Kiserleti procedura" = experimental procedure: put any text into "notes".
+
+Per card:
+{"cage": "...", "type": "stock" | "pair" | "empty", "line": "...", "line_as_written": "...", "sex": "M"|"F",
+ "count": n, "birth": "yyyy-mm-dd", "origin": "...", "arrived": "yyyy-mm-dd", "notes": "...",
+ "uncertain": [field names that were hard to read or ambiguous]}
+For a breeding-pair card use "type": "pair" and, if the birth dates of the parents are written,
+"males": [{"birth": "yyyy-mm-dd"}], "females": [{"birth": "..."}, ...].
+Leave out fields that are empty on the card. Never guess a value you cannot see: leave it out instead.
+If a card is too blurry to read: {"cage": "<if readable>", "unreadable": true, "notes": "why"}.
+Today is {today}; birth and arrival dates are never in the future.
+
+=== ANIMAL-HOUSE LOG PAGE ("EGER") ===
+A table with the columns: "Datum" (date, often written on two lines: 2025 / 10.28), "Allvany/oldal/sor/doboz"
+(the cage code, same form as on the cards, e.g. II/A/4/d), "allat sorszama" (number and sex of the animals,
+e.g. "4 male-sign" or "2 female-sign 1 male-sign"), "esemeny" (the event), "sulyossag" (severity, only for kivitel,
+e.g. 4BA), "Kutato neve" (researcher), and two signature columns (ignore them).
+A vertical line drawn in a cell means "same as the row above" (ditto); a row with an empty or ditto date has the
+date of the row above. Read every row, top to bottom.
+Events: "kivitel" = animals taken out of the animal house -> "removed". "athelyez"/"athelyezes" = animals moved to
+another cage, the target cage is written under the word -> "moved". "levalaszt"/"levalasztas" = weaning, the new
+cages are written under the word -> "weaned". Animals found dead ("elpusztult", "elhullott") -> "died".
+Anything else -> "other".
+Per row:
+{"date": "yyyy-mm-dd", "cage": "...", "event": "removed" | "moved" | "weaned" | "died" | "other",
+ "event_as_written": "kivitel", "males": n, "females": n,
+ "to": [{"cage": "...", "males": n, "females": n}],   (only for moved / weaned: where the animals went;
+        when several target cages are listed, give each one the animals that went there - usually males to the
+        first and females to the second; if you cannot tell, put "to" in "uncertain")
+ "severity": "4BA", "person": "Szarka G", "notes": "...", "uncertain": [field names]}
+
+KNOWN LINES: {lines}
+KNOWN CAGE CODES: {cages}
+`;
+function cardPrompt(col){
+  const cages = [...new Set([...col.cages.map(c => c.cage), ...col.pairs.map(p => p.cage)])].sort().slice(0, 400);
+  return CARD_PROMPT.replace('{today}', col.today).replace('{lines}', Object.keys(col.lines).sort().join('; ') || '(none)')
+    .replace('{cages}', cages.map(cardName).join(', ') || '(none)');
+}
+async function shrinkPhoto(file){
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => bad(new Error('Cannot open this photo.')); i.src = url; });
+    const k = Math.min(1, 2048 / Math.max(img.naturalWidth, img.naturalHeight));
+    const cv = document.createElement('canvas'); cv.width = Math.round(img.naturalWidth * k); cv.height = Math.round(img.naturalHeight * k);
+    cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+    return cv.toDataURL('image/jpeg', 0.88).split(',')[1];
+  } finally { URL.revokeObjectURL(url); }
+}
+async function geminiCall(model, prompt, b64){
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {method: 'POST',
+    headers: {'Content-Type': 'application/json', 'x-goog-api-key': cfg.gemKey},
+    body: JSON.stringify({contents: [{role: 'user', parts: [{text: prompt}, {inline_data: {mime_type: 'image/jpeg', data: b64}}]}],
+      generationConfig: {responseMimeType: 'application/json', temperature: 0}})});
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = j.error || {}, msg = e.message || r.statusText;
+    if (r.status === 404) { const x = new Error(msg); x.model = true; throw x; }
+    if ([500,502,503,504].includes(r.status)) { const x = new Error('Gemini is busy right now. Try again in a few minutes.'); x.busy = true; throw x; }
+    if (r.status === 429) throw new Error('The free Gemini limit is used up for now. Try again later.');
+    if (/API.?key/i.test(msg)) throw new Error('Google does not accept the Gemini API key (Settings).');
+    throw new Error('Gemini error ' + r.status + ': ' + msg); }
+  const c = (j.candidates || [])[0]; const text = c && c.content ? c.content.parts.map(p => p.text || '').join('') : '';
+  if (!text) throw new Error('Gemini returned no answer.');
+  return text;
+}
+async function readPhoto(file, prompt){
+  const b64 = await shrinkPhoto(file);
+  const plan = [[cfg.model || GEMINI_DEFAULT_MODEL, 0], [cfg.model || GEMINI_DEFAULT_MODEL, 4], [cfg.model || GEMINI_DEFAULT_MODEL, 12],
+    [GEMINI_FALLBACK_MODEL, 2], [GEMINI_FALLBACK_MODEL, 10]];
+  let last = null;
+  for (const [m, wait] of plan) { if (last && last.model && m !== GEMINI_FALLBACK_MODEL) continue;
+    await new Promise(r => setTimeout(r, wait * 1000));
+    try { return parseRecords(await geminiCall(m, prompt, b64)); } catch (e) { if (!(e.busy || e.model)) throw e; last = e; } }
+  throw last;
+}
+function parseRecords(text){
+  let t = String(text || '').trim();
+  if (t.includes('```')) { const parts = t.split('```'); t = parts.filter((_, i) => i % 2).sort((a, b) => b.length - a.length)[0] || t; t = t.replace(/^\s*json/i, ''); }
+  const i = t.indexOf('{'), j = t.lastIndexOf('}'); if (i < 0 || j < i) throw new Error('No cage cards or log rows found.');
+  let o; try { o = JSON.parse(t.slice(i, j + 1)); } catch (e) { throw new Error('The answer is not valid JSON.'); }
+  const cards = (o.cards || []).filter(x => x && typeof x === 'object'), events = (o.events || []).filter(x => x && typeof x === 'object');
+  for (const x of [...cards, ...events]) if (typeof x.uncertain === 'string') x.uncertain = [x.uncertain];
+  return {cards, events, read_on: o.read_on || todayISO()};
+}
+
+/* ---------------- UI ---------------- */
+let tab = store('mc_tab') || 'cages', filt = store('mc_filt') || {q: '', rack: 'all'};
+function go(t){ tab = t; store('mc_tab', t); render(); window.scrollTo(0, 0); }
+function toast(msg, isErr){ const d = document.createElement('div'); d.className = 'busy'; d.innerHTML = `<div><div class="${isErr ? 'err' : ''}">${esc(msg)}</div><div class="btns"><button class="b">OK</button></div></div>`;
+  d.querySelector('button').onclick = () => d.remove(); document.body.appendChild(d); }
+async function busy(msg, fn){
+  const d = document.createElement('div'); d.className = 'busy'; d.innerHTML = `<div><span class="spin"></span>${esc(msg)}</div>`; document.body.appendChild(d);
+  try { return await fn(); }
+  catch (e) { if (e instanceof AuthError) { d.remove(); askSignIn(e.message); return; } throw e; }
+  finally { d.remove(); }
+}
+function askSignIn(msg){ const d = document.createElement('div'); d.className = 'busy';
+  d.innerHTML = `<div><div>${esc(msg || 'Sign in with Google to open the shared colony.')}</div><div class="btns"><button class="b">Sign in with Google</button><button class="b2">Later</button></div></div>`;
+  d.querySelector('.b').onclick = signIn; d.querySelector('.b2').onclick = () => d.remove(); document.body.appendChild(d); }
+function sheet(html, onReady){ const L = $('#layer'); L.innerHTML = `<div class="sheet"><div>${html}</div></div>`;
+  const s = L.firstChild; s.addEventListener('click', e => { if (e.target === s) closeSheet(); }); if (onReady) onReady(s.firstChild); return s.firstChild; }
+function closeSheet(){ $('#layer').innerHTML = ''; }
+function flagCls(f){ return f === 'OVER AGE' || f === 'NO DATE' ? 'bad' : f === 'Replace soon' ? 'warn' : f === 'OK' ? 'ok' : 'info'; }
+
+async function reload(quiet){
+  if (!backend) { render(); return; }
+  if (!tokenOk()) { render(); if (!quiet) askSignIn(); return; }
+  try { await busy('Getting the latest colony...', async () => { col = await fetchColony(); loadedAt = new Date(); });
+    if (!DEMO && !token.email) fetch('https://openidconnect.googleapis.com/v1/userinfo', {headers: {Authorization: 'Bearer ' + token.access}})
+      .then(r => r.json()).then(j => { if (j.email) { token.email = j.email; store('mc_token', token); if (!cfg.user) { cfg.user = j.email.split('@')[0]; store('mc_cfg', cfg); } } }).catch(() => {});
+  } catch (e) { toast(e.message, true); }
+  render();
+}
+function statusLine(){
+  if (DEMO) return 'DEMO mode - made-up colony, changes stay on this phone. Settings → leave demo to use the real sheet.';
+  if (!cfg.sheetId || !cfg.clientId) return 'Not set up yet - open Settings.';
+  if (!tokenOk()) return 'Not signed in.';
+  return loadedAt ? `Loaded ${loadedAt.toTimeString().slice(0,5)}` + (token.email ? ` · ${token.email}` : '') + ` · tokens valid until ${new Date(token.exp).toTimeString().slice(0,5)}` : '';
+}
+function render(){
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  $('#title').textContent = col ? col.meta.title : 'Mouse Colony';
+  $('#status').textContent = statusLine();
+  const M = $('#main');
+  if (tab === 'more') { M.innerHTML = settingsView(); return; }
+  if (!col) { M.innerHTML = `<div class="card"><b>Welcome.</b><p class="muted">${!cfg.sheetId && !DEMO ? 'Open Settings to connect the shared colony sheet, or try the demo.' : 'Sign in with Google to open the shared colony.'}</p>
+    <div class="btns">${cfg.sheetId && cfg.clientId && !DEMO ? '<button class="b" onclick="signIn()">Sign in with Google</button>' : ''}<button class="b2" onclick="go(\'more\')">Settings</button></div></div>`; return; }
+  if (tab === 'cages') M.innerHTML = cagesView();
+  else if (tab === 'pairs') M.innerHTML = pairsView();
+  else if (tab === 'photo') M.innerHTML = photoView();
+  else if (tab === 'todo') M.innerHTML = todoView();
+}
+function cagesView(){
+  const q = filt.q.trim().toLowerCase(), racks = [...new Set(col.cages.map(c => (c.cage.match(/^[IV]+[A-Z]/) || [''])[0]))].filter(Boolean);
+  let list = col.cages.filter(c => filt.rack === 'all' || c.cage.startsWith(filt.rack) && /\d/.test(c.cage[filt.rack.length]));
+  if (filt.empty !== true) list = list.filter(c => c.line || c.count || col.activePair(c.cage));
+  if (q) { const qq = normCage(q).toLowerCase();
+    list = list.filter(c => { const p = col.activePair(c.cage);
+      return c.cage.toLowerCase().includes(qq) || cardName(c.cage).toLowerCase().includes(q) || (c.line || '').toLowerCase().includes(q) ||
+        col.miceIn(c.cage).some(m => m.id.toLowerCase() === q) || (p && col.members(p).some(x => x.toLowerCase() === q)); }); }
+  const items = list.map(c => { const p = col.activePair(c.cage), mice = col.miceIn(c.cage);
+    let right = '', sub = '';
+    if (p) { const f = col.pairFlag(p); sub = `pair ${col.members(p).join(' × ')} · ${months(col.pairOldest(p))}`; right = `<span class="pill ${flagCls(f)}">${esc(f)}</span>`; }
+    else if (c.line || c.count) { const a = col.age(c.birth); const todo = mice.filter(m => m.todo).length;
+      sub = `${c.count ?? '?'} ${c.sex} · ${a === null ? 'no birth date' : months(a)}` + (mice.length ? ' · ' + mice.map(m => m.mark).join(', ') : '');
+      right = todo ? `<span class="pill todo">${todo} to genotype</span>` : ''; }
+    else sub = 'empty';
+    return `<div class="item" onclick="openCage('${c.cage}')"><div class="code">${esc(cardName(c.cage))}</div><div class="grow"><div>${esc(p ? p.line : c.line || '—')}</div><div class="sub">${esc(sub)}</div></div>${right}</div>`; }).join('');
+  return `<input type="search" placeholder="Search cage, line, mouse or breeder ID" value="${esc(filt.q)}" oninput="filt.q=this.value;store('mc_filt',filt);redrawList()">
+  <div class="chips" style="margin-top:8px">${['all', ...racks].map(r => `<button class="chip ${filt.rack === r ? 'on' : ''}" onclick="filt.rack='${r}';store('mc_filt',filt);render()">${r === 'all' ? 'All' : esc(r.replace(/^([IV]+)/, '$1/'))}</button>`).join('')}
+  <button class="chip ${filt.empty ? 'on' : ''}" onclick="filt.empty=!filt.empty;store('mc_filt',filt);render()">Show empty</button></div>
+  <div id="cageList" class="list">${items || '<div class="item muted">No cages match.</div>'}</div>`;
+}
+function redrawList(){ const el = $('#cageList'); if (!el) return; const tmp = document.createElement('div'); tmp.innerHTML = cagesView(); el.innerHTML = tmp.querySelector('#cageList').innerHTML; }
+function pairsView(){
+  const ps = col.pairs.filter(p => p.status === 'Active').sort((a, b) => (col.pairOldest(b) || 0) - (col.pairOldest(a) || 0));
+  return `<div class="list">${ps.map(p => { const f = col.pairFlag(p);
+    const mem = col.members(p).map(x => { const b = col.breeders[x]; return b ? `${x} ${b.sex === 'M' ? '♂' : '♀'} ${months(col.age(b.birth))}` : x; }).join(' · ');
+    return `<div class="item" onclick="openCage('${p.cage}')"><div class="code">${esc(cardName(p.cage))}</div><div class="grow"><div>${esc(p.line)}</div>
+      <div class="sub">${esc(mem)}</div><div class="sub">replace by ${esc(col.replaceBy(p))}</div></div><span class="pill ${flagCls(f)}">${esc(f)}</span></div>`; }).join('')}</div>
+    <p class="sub">Breeders are flagged amber ${col.settings.WarnDays} days before ${col.settings.MaxAge} days of age and red at ${col.settings.MaxAge} days. Pairing check and new pairs: desktop program.</p>`;
+}
+function todoView(){
+  const ms = Object.values(col.mice).filter(m => m.status === 'Alive' && m.todo);
+  const by = {}; for (const m of ms) (by[m.cage] || (by[m.cage] = [])).push(m);
+  const cages = Object.keys(by).sort();
+  return `<p class="sub">${ms.length} mice need genotyping. Tap a cage to enter the results.</p><div class="list">${cages.map(c => `<div class="item" onclick="genotypeDialog('${c}')">
+    <div class="code">${esc(cardName(c))}</div><div class="grow"><div>${esc(by[c][0].line)}</div><div class="sub">${by[c].map(m => esc(`${m.id} (${m.mark})`)).join(', ')}</div></div>
+    <span class="pill todo">${by[c].length}</span></div>`).join('') || '<div class="item muted">Nothing to genotype.</div>'}</div>`;
+}
+function openCage(cg){
+  const c = col.cage(cg), p = col.activePair(cg), mice = col.miceIn(cg);
+  let body = '';
+  if (p) { body = `<div class="list">${col.members(p).map(x => { const b = col.breeders[x]; if (!b) return `<div class="item">${esc(x)}</div>`; const a = col.age(b.birth), f = col.flag(a);
+      return `<div class="item"><div class="grow"><b>${esc(x)}</b> ${b.sex === 'M' ? '♂' : '♀'} · born ${esc(b.birth || '?')} · ${months(a)}<div class="sub">${esc(gtPretty(b.gt) || 'genotype ?')}${b.sire ? ` · parents ${esc(b.sire)} × ${esc(b.dam)}` : ''}</div></div><span class="pill ${flagCls(f)}">${esc(f)}</span></div>`; }).join('')}</div>
+      <p class="sub">Pair set up ${esc(p.setup || '?')} · replace by ${esc(col.replaceBy(p))}. Changing breeders: desktop program.</p>`; }
+  else if (mice.length) { body = `<div class="list">${mice.map(m => `<label class="item"><input type="checkbox" class="chk" value="${m.id}"><div class="grow"><b>${esc(m.mark)}</b> · ${esc(m.id)} · ${esc(m.sex)}
+      <div class="sub">${esc(gtPretty(col.mouseGt(m.id)) || 'no alleles tracked')}</div></div>${m.todo ? '<span class="pill todo">genotype</span>' : ''}</label>`).join('')}</div>
+      <div class="sub">${esc(c.line)} · born ${esc(c.birth || '?')} (${months(col.age(c.birth))})${c.sire ? ` · parents ${esc(c.sire)} × ${esc(c.dam || '?')}` : ''}${c.note ? ' · ' + esc(c.note) : ''}</div>
+      <div class="btns"><button class="b danger" onclick="kivitelDialog('${cg}')">Kivitel</button><button class="b2" onclick="moveDialog('${cg}')">Move</button>
+      <button class="b2" onclick="genotypeDialog('${cg}')">Genotypes</button><button class="b2" onclick="cardForm('${cg}')">Card</button></div>
+      <small class="k">Tick mice first for Kivitel / Move (nothing ticked = choose in the next step).</small>`; }
+  else if (c.line || c.count) body = `<p>${esc(c.count)} ${esc(c.sex)} ${esc(c.line)} - no individual mice in the app (use the desktop).</p>`;
+  else body = `<p class="muted">Empty cage.</p><div class="btns"><button class="b" onclick="cardForm('${cg}')">New card for this cage</button></div>`;
+  sheet(`<div class="row"><h2 class="grow">${esc(cardName(cg))}</h2><button class="b2" onclick="closeSheet()">Close</button></div>
+    <div class="sub" style="margin-bottom:6px">${esc(p ? 'Breeding pair · ' + p.line : (c.line ? `${c.line} · ${mice.length || c.count} ${c.sex}` : ''))}</div>${body}`);
+}
+function ticked(){ return [...document.querySelectorAll('#layer input.chk:checked')].map(x => x.value); }
+function miceChecklist(cg, pre){ return `<div class="list">${col.miceIn(cg).map(m => `<label class="item"><input type="checkbox" class="chk mk" value="${m.id}" ${pre.includes(m.id) ? 'checked' : ''}>
+  <div class="grow"><b>${esc(m.mark)}</b> · ${esc(m.id)} · ${esc(m.sex)}</div></label>`).join('')}</div>`; }
+function kivitelDialog(cg){
+  const pre = ticked();
+  sheet(`<h2>Kivitel - ${esc(cardName(cg))}</h2><p class="sub">The ticked mice go to the Terminated history.</p>${miceChecklist(cg, pre)}
+    <label class="f">Date</label><input type="date" id="kDate" value="${todayISO()}">
+    <label class="f">Outcome</label><select id="kOut">${OUTCOMES.map(o => `<option>${esc(o)}</option>`).join('')}</select>
+    <label class="f">Severity / reason</label><input id="kReason" value="severity 4BA">
+    <label class="f">Person</label><input id="kPerson" value="${esc(cfg.user)}">
+    <label class="f">Notes</label><input id="kNotes">
+    <div class="btns"><button class="b danger" id="kGo">Take out</button><button class="b2" onclick="closeSheet()">Cancel</button></div>`, s => {
+    s.querySelector('#kGo').onclick = async () => { const ids = [...s.querySelectorAll('.mk:checked')].map(x => x.value);
+      if (!ids.length) return toast('Tick the mice that were taken out.');
+      const o = {date: s.querySelector('#kDate').value || todayISO(), outcome: s.querySelector('#kOut').value, reason: s.querySelector('#kReason').value.trim(),
+        person: s.querySelector('#kPerson').value.trim(), notes: s.querySelector('#kNotes').value.trim()};
+      if (!confirm(`Take out ${ids.length} mice from ${cardName(cg)}?`)) return;
+      try { await commit('Saving to the shared sheet...', (fc, ch) => { const ok = ids.filter(i => fc.mice[i] && fc.mice[i].status === 'Alive');
+          if (ok.length !== ids.length) throw new Error('Someone changed this cage meanwhile - check it again.'); termMice(fc, ch, ok, o); });
+        closeSheet(); render(); toast(`${ids.length} mice taken out.`); } catch (e) { if (e) toast(e.message, true); } };
+  });
+}
+function moveDialog(cg){
+  const pre = ticked(), opts = col.cages.filter(c => c.cage !== cg && !col.activePair(c.cage)).map(c => `<option value="${c.cage}">${esc(cardName(c.cage))} ${c.line ? '· ' + esc(c.line) + ' ' + (c.count ?? '') + ' ' + esc(c.sex) : '· empty'}</option>`).join('');
+  sheet(`<h2>Move from ${esc(cardName(cg))}</h2>${miceChecklist(cg, pre)}<label class="f">To cage</label><select id="mDest">${opts}</select>
+    <div class="btns"><button class="b" id="mGo">Move</button><button class="b2" onclick="closeSheet()">Cancel</button></div>`, s => {
+    s.querySelector('#mGo').onclick = async () => { const ids = [...s.querySelectorAll('.mk:checked')].map(x => x.value), dest = s.querySelector('#mDest').value;
+      if (!ids.length) return toast('Tick the mice to move.');
+      try { await commit('Saving to the shared sheet...', (fc, ch) => { if (ids.some(i => !fc.mice[i] || fc.mice[i].cage !== cg || fc.mice[i].status !== 'Alive'))
+          throw new Error('Someone changed this cage meanwhile - check it again.'); moveMice(fc, ch, ids, dest); });
+        closeSheet(); render(); toast(`Moved to ${cardName(dest)}.`); } catch (e) { if (e) toast(e.message, true); } };
+  });
+}
+function genotypeDialog(cg){
+  const mice = col.miceIn(cg); if (!mice.length) return;
+  const loci = col.lociFor(mice[0].line);
+  if (!loci.length) return toast('This line has no alleles listed (Lines sheet).');
+  const sel = (m, lc) => { const v = (m.gt[lc] || '?'); return `<select data-m="${m.id}" data-l="${esc(lc)}">${Object.entries(GT_LABEL).map(([k, l]) => `<option value="${k}" ${v === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`; };
+  sheet(`<h2>Genotypes - ${esc(cardName(cg))}</h2><div class="list gtgrid">${mice.map(m => `<div class="item" style="flex-wrap:wrap"><div style="min-width:110px"><b>${esc(m.mark)}</b> · ${esc(m.id)}${m.todo ? ' <span class="pill todo">to do</span>' : ''}</div>
+    <div class="grow">${loci.map(lc => `<div class="row" style="margin:3px 0"><span class="sub" style="min-width:90px">${esc(lc)}</span>${sel(m, lc)}</div>`).join('')}</div></div>`).join('')}</div>
+    <label class="f">Date</label><input type="date" id="gDate" value="${todayISO()}"><label class="f">Person</label><input id="gPerson" value="${esc(cfg.user)}">
+    <div class="btns"><button class="b" id="gGo">Save genotypes</button><button class="b2" onclick="closeSheet()">Cancel</button></div>`, s => {
+    s.querySelector('#gGo').onclick = async () => { const res = {};
+      s.querySelectorAll('select[data-m]').forEach(x => { const m = col.mice[x.dataset.m]; if ((m.gt[x.dataset.l] || '?') !== x.value) (res[x.dataset.m] || (res[x.dataset.m] = {}))[x.dataset.l] = x.value; });
+      if (!Object.keys(res).length) return closeSheet();
+      try { await commit('Saving to the shared sheet...', (fc, ch) => recordGenotypes(fc, ch, res, {date: s.querySelector('#gDate').value || todayISO(), person: s.querySelector('#gPerson').value.trim()}));
+        closeSheet(); render(); toast('Genotypes saved.'); } catch (e) { if (e) toast(e.message, true); } };
+  });
+}
+function cardForm(cg){
+  const c = col.cage(cg) || {}, lines = Object.keys(col.lines).sort();
+  sheet(`<h2>Cage card ${esc(cardName(cg))}</h2><p class="sub">Type what the card says; the next screen shows what changes.</p>
+    <label class="f">Törzs (line)</label><select id="cLine"><option value=""></option>${lines.map(l => `<option ${l === c.line ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
+    <div class="row"><div class="grow"><label class="f">Nem (sex)</label><select id="cSex"><option></option><option ${c.sex === 'M' ? 'selected' : ''}>M</option><option ${c.sex === 'F' ? 'selected' : ''}>F</option></select></div>
+    <div class="grow"><label class="f">Egerek száma</label><input id="cCount" type="number" inputmode="numeric" value="${esc(col.miceIn(cg).length || '')}"></div></div>
+    <label class="f">Születés ideje (born)</label><input type="date" id="cBirth" value="${esc(c.birth || '')}">
+    <label class="f">Származási hely (origin cage)</label><input id="cOrigin" placeholder="e.g. II/A/6/e">
+    <label class="f">Notes / procedure</label><input id="cNotes">
+    <div class="btns"><button class="b" id="cGo">Review</button><button class="b2" onclick="closeSheet()">Cancel</button></div>`, s => {
+    s.querySelector('#cGo').onclick = () => { const card = {cage: cardName(cg), type: 'stock', line: s.querySelector('#cLine').value, sex: s.querySelector('#cSex').value,
+        count: parseInt(s.querySelector('#cCount').value) || 0, birth: s.querySelector('#cBirth').value, origin: s.querySelector('#cOrigin').value.trim(), notes: s.querySelector('#cNotes').value.trim()};
+      if (!card.line || !card.sex || !card.count) return toast('Line, sex and count are needed.');
+      review({cards: [card], events: [], read_on: todayISO()}, 'Typed card'); };
+  });
+}
+function photoView(){
+  return `<div class="card"><b>Read cage cards or a log page</b><p class="sub">Take a photo straight on, the whole card or page in the frame, no glare on the numbers.
+    Several cards in one photo are fine. Nothing changes until you confirm on the review screen.</p>
+    ${cfg.gemKey ? '' : '<p class="err">Enter your Gemini API key in Settings first.</p>'}
+    <label class="b" style="display:inline-block;margin-top:6px">Take or choose photos<input type="file" accept="image/*" multiple style="display:none" onchange="photosPicked(this)"></label></div>
+    <div class="card"><b>Paste an answer from the Gemini chat</b><p class="sub">If you used the Gemini app with the instructions file, copy its answer and paste it here.</p>
+    <textarea id="pasteBox" rows="4" placeholder="Paste the JSON answer here"></textarea><div class="btns"><button class="b2" id="pasteGo" onclick="pasted()">Review</button></div></div>`;
+}
+async function photosPicked(inp){
+  const files = [...inp.files]; inp.value = ''; if (!files.length) return;
+  if (!cfg.gemKey) return toast('Enter your Gemini API key in Settings first.');
+  const all = {cards: [], events: [], read_on: todayISO()}, errs = [];
+  await busy(`Reading ${files.length} photo(s) with Gemini...`, async () => { const prompt = cardPrompt(col);
+    for (const f of files) { try { const r = await readPhoto(f, prompt); all.cards.push(...r.cards); all.events.push(...r.events); } catch (e) { errs.push(e.message); } } });
+  if (errs.length) toast('Some photos could not be read:\n' + errs.slice(0, 4).join('\n'), true);
+  if (all.cards.length || all.events.length) review(all, 'Gemini read'); else if (!errs.length) toast('No cage cards or log rows found in the photos.');
+}
+function pasted(){ try { review(parseRecords($('#pasteBox').value), 'Pasted'); } catch (e) { toast(e.message, true); } }
+/* Cards are compared AFTER the ticked log rows (e.g. old mice taken out of a cage, then the new card for it). */
+function cardsAfterEvents(base, data, evApply){
+  const sim = new Colony(base.meta, JSON.parse(JSON.stringify(base.v)));
+  const ev = compareEvents(sim, data); ev.forEach(x => { x.apply = evApply(x); });
+  applyEvents(sim, new Changes(sim), ev);
+  return {sim, ev, cards: compareCards(sim, data)};
+}
+const same = (a, b) => a.cage === b.cage && a.kind === b.kind && a.what === b.what;
+async function review(data, label){
+  try { await busy('Comparing with the latest colony...', async () => { col = await fetchColony(); loadedAt = new Date(); }); } catch (e) { return toast(e.message, true); }
+  const evCh = compareEvents(col, data);
+  let cardCh = cardsAfterEvents(col, data, x => { const o = evCh.find(y => y.key === x.key && y.what === x.what); return !!(o && o.apply); }).cards;
+  const row = (x, i, grp) => `<label class="item ${x.kind === 'info' ? 'off' : ''}"><input type="checkbox" class="chk" data-g="${grp}" data-i="${i}" ${x.apply ? 'checked' : ''} ${x.kind === 'info' ? 'disabled' : ''}>
+    <div class="grow"><div><b>${esc(cardName(x.cage))}</b>${x.date ? ' · ' + esc(x.date) : ''} · ${esc(x.what)}</div><div class="sub">${x.app ? 'app: ' + esc(x.app) + ' · ' : ''}${esc(grp === 'c' ? 'card: ' : 'log: ')}${esc(x.card)}</div></div></label>`;
+  const cardsHtml = () => cardCh.length ? `<h3>Cage cards (${data.cards.length})</h3><div class="list rv">${cardCh.map((x, i) => row(x, i, 'c')).join('')}</div>`
+    : (data.cards.length ? `<p class="sub">${data.cards.length} card(s) match the colony.</p>` : '');
+  sheet(`<div class="row"><h2 class="grow">${esc(label)} - review</h2><button class="b2" onclick="closeSheet()">Cancel</button></div>
+    <p class="sub">Check every row against the card / log page. Grey rows are information only. Unclear readings start unticked.${evCh.length && data.cards.length ? ' The cards are compared with the colony as it will be after the ticked log rows.' : ''}</p>
+    ${evCh.length ? `<h3>Log rows (${data.events.length})</h3><div class="list rv">${evCh.map((x, i) => row(x, i, 'e')).join('')}</div>` : ''}
+    <div id="cardsPart">${cardsHtml()}</div>
+    <div class="btns"><button class="b" id="rGo">Apply ticked</button></div>`, s => {
+    s.addEventListener('change', e => { const t = e.target; if (!t.dataset || !t.dataset.g) return;
+      if (t.dataset.g === 'e') { evCh[+t.dataset.i].apply = t.checked;      // log rows changed: compare the cards again
+        const keep = cardCh.filter(x => x.kind !== 'info');
+        cardCh = cardsAfterEvents(col, data, x => { const o = evCh.find(y => y.key === x.key && y.what === x.what); return !!(o && o.apply); }).cards;
+        cardCh.forEach(x => { const o = keep.find(y => same(x, y)); if (o) x.apply = o.apply; });
+        s.querySelector('#cardsPart').innerHTML = cardsHtml(); }
+      else cardCh[+t.dataset.i].apply = t.checked; });
+    s.querySelector('#rGo').onclick = async () => {
+      const nT = evCh.filter(x => x.apply && x.kind === 'term_mice').length;
+      const todo = cardCh.filter(x => x.apply && x.kind !== 'info').length + evCh.filter(x => x.apply && x.kind !== 'info').length;
+      if (!todo) return closeSheet();
+      if (!confirm(`Apply ${todo} change(s)?` + (nT ? ` ${nT} of them take out mice.` : ''))) return;
+      try { await commit('Saving to the shared sheet...', (fc, ch) => {
+          // log rows first, then the cards - on the latest sheet, keeping only the rows ticked on this screen
+          const ev = compareEvents(fc, data); ev.forEach(x => { const o = evCh.find(y => y.key === x.key && y.what === x.what); x.apply = !!(o && o.apply); });
+          applyEvents(fc, ch, ev);
+          const cc = compareCards(fc, data); cc.forEach(x => { const o = cardCh.find(y => same(x, y)); x.apply = !!(o && o.apply); });
+          if (cc.some(x => x.apply && x.kind !== 'info')) applyCards(fc, ch, cc, data.read_on); });
+        closeSheet(); render(); toast('Applied.'); } catch (e) { if (e) toast(e.message, true); } };
+  });
+}
+function settingsView(){
+  return `<div class="card"><b>Shared colony sheet</b>
+    <label class="f">Google Sheet link</label><input id="sSheet" value="${esc(cfg.sheetId ? 'https://docs.google.com/spreadsheets/d/' + cfg.sheetId : '')}" placeholder="https://docs.google.com/spreadsheets/d/...">
+    <label class="f">Web login ID (OAuth client ID, ends with .apps.googleusercontent.com)</label><input id="sClient" value="${esc(cfg.clientId)}">
+    <label class="f">Your name (used as "Person" and in the change log)</label><input id="sUser" value="${esc(cfg.user)}">
+    <div class="btns"><button class="b" onclick="saveSettings()">Save</button>${tokenOk() && !DEMO ? '<button class="b2" onclick="signOut()">Sign out</button>' : '<button class="b2" onclick="saveSettings(true)">Save and sign in</button>'}</div>
+    <p class="sub">${token && token.email ? 'Signed in as ' + esc(token.email) + '.' : ''} Google asks for a new sign-in about every hour; it is quick after the first time.</p></div>
+  <div class="card"><b>Photo reading (Gemini)</b><label class="f">Gemini API key (aistudio.google.com → API keys)</label><input id="sGem" type="password" value="${esc(cfg.gemKey)}" autocomplete="off">
+    <label class="f">Model</label><input id="sModel" value="${esc(cfg.model || GEMINI_DEFAULT_MODEL)}"><div class="btns"><button class="b" onclick="saveSettings()">Save</button></div>
+    <p class="sub">The key stays on this phone. On the free plan Google may use the photos to improve its products, so photograph only the cards.</p></div>
+  <div class="card"><b>Colleagues</b><p class="sub">Send this link to a colleague: it opens the app with the sheet and login ID filled in. They also need the sheet shared with their Google account.</p>
+    <div class="btns"><button class="b2" onclick="shareLink()">Copy setup link</button></div></div>
+  <div class="card"><b>Add to the home screen</b><p class="sub">In Safari: Share button → <b>Add to Home Screen</b>. The app then opens full screen with its own icon.</p></div>
+  <div class="card"><b>Demo</b><p class="sub">${DEMO ? 'You are in the demo (made-up colony).' : 'Try the app with a made-up colony; nothing is sent to Google.'}</p>
+    <div class="btns">${DEMO ? `<button class="b2" onclick="location.href=location.pathname">Leave the demo</button><button class="b2" onclick="localStorage.removeItem('mc_demo');location.reload()">Reset the demo</button>`
+      : `<button class="b2" onclick="location.href=location.pathname+'?demo=1'">Open the demo</button>`}</div></div>
+  <p class="sub">Mouse Colony phone app ${APP_VERSION}. Pairing check, new pairs, weaning and breeders: desktop program.</p>`;
+}
+function saveSettings(thenSignIn){
+  const v = id => ($('#' + id) || {}).value;
+  if (v('sSheet') !== undefined) { cfg.sheetId = sheetIdFrom(v('sSheet')); cfg.clientId = (v('sClient') || '').trim(); cfg.user = (v('sUser') || '').trim(); }
+  if (v('sGem') !== undefined) { cfg.gemKey = (v('sGem') || '').trim(); cfg.model = (v('sModel') || '').trim() || GEMINI_DEFAULT_MODEL; }
+  store('mc_cfg', cfg); makeBackend();
+  if (thenSignIn) return signIn();
+  toast('Saved.'); if (backend && tokenOk() && !col) reload();
+}
+function shareLink(){
+  if (!cfg.sheetId || !cfg.clientId) return toast('Enter the sheet link and the login ID first.');
+  const u = location.origin + location.pathname + '?' + new URLSearchParams({sheet: cfg.sheetId, client: cfg.clientId});
+  (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(() => toast('Link copied:\n' + u), () => toast(u));
+}
+
+makeBackend();
+render();
+if (backend && tokenOk()) reload(true);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && col && loadedAt && Date.now() - loadedAt > 120000 && tokenOk()) reload(true); });
+</script>
+</body>
+</html>

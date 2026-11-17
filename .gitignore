@@ -1,0 +1,8 @@
+# local build output and app data that should never be committed
+build/
+dist/
+backups/
+__pycache__/
+*.pyc
+selftest.txt
+.DS_Store

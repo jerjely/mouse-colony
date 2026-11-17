@@ -19,7 +19,7 @@ import sys
 import openpyxl
 
 APP_NAME = 'Mouse Colony'
-VERSION = '2.3.2'
+VERSION = '2.3.3'
 WORKBOOK_NAME = 'Volgyi_mice_colony.xlsx'
 
 
@@ -5777,7 +5777,36 @@ def run_gui(path=None):
     root.mainloop()
 
 
+def selftest(out_path):
+    """Used by the automatic installer builds: check that every part made it into the package."""
+    lines, ok = [f'Mouse Colony {VERSION}', f'Python {sys.version.split()[0]} on {sys.platform}'], True
+    for mod in ('openpyxl', 'gspread', 'google.oauth2.credentials', 'google_auth_oauthlib.flow', 'PIL.Image', 'tkinter'):
+        try:
+            __import__(mod)
+            lines.append(f'ok   {mod}')
+        except Exception as e:
+            ok = False
+            lines.append(f'FAIL {mod}: {e}')
+    try:
+        import tkinter
+        lines.append('ok   Tcl/Tk ' + str(tkinter.Tcl().eval('info patchlevel')))
+    except Exception as e:
+        ok = False
+        lines.append(f'FAIL Tcl/Tk: {e}')
+    try:
+        import tkinterdnd2  # optional
+        lines.append('ok   tkinterdnd2 (drag and drop)')
+    except Exception:
+        lines.append('--   tkinterdnd2 not included (drag and drop off)')
+    lines.append('SELFTEST OK' if ok else 'SELFTEST FAILED')
+    with open(out_path, 'w', encoding='utf-8') as fh:
+        fh.write('\n'.join(lines) + '\n')
+    return ok
+
+
 if __name__ == '__main__':
+    if len(sys.argv) > 2 and sys.argv[1] == '--selftest':
+        sys.exit(0 if selftest(sys.argv[2]) else 1)
     try:
         run_gui(sys.argv[1] if len(sys.argv) > 1 else None)
     except Exception:

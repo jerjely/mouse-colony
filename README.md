@@ -5,6 +5,14 @@ Works on the workbook `Volgyi_mice_colony.xlsx` (Breeders, Pairs, Cages, Lines, 
 
 ## Installing
 
+**Easiest: ready-made installers.** On the repository's **Releases** page download
+`MouseColony-…-Windows-Setup.exe` (Windows), `…-Mac-AppleSilicon.pkg` (M1–M4 Macs) or `…-Mac-Intel.pkg` (Intel Macs).
+Nothing else is needed - no Python. They are unsigned: on Windows click *More info → Run anyway*; on a Mac
+right-click the .pkg → *Open*. New installers are built automatically for every version tag (see **RELEASING.md**).
+
+The scripts below install from the source files instead (needs Python):
+
+
 **Windows:** unzip, then double-click **`install_windows.bat`**. You don't need admin rights.
 It finds Python 3.8+ (python.org or Anaconda), creates a private environment in
 `%LOCALAPPDATA%\MouseColony`, installs openpyxl and adds a **Mouse Colony** shortcut to the Desktop and

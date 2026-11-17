@@ -1,0 +1,119 @@
+# Builds the Mouse Colony installers on GitHub's own machines and attaches them to a release.
+#   Push a tag such as v2.3.3 (it must match VERSION in mouse_colony_tool.py) -> a release "Mouse Colony 2.3.3"
+#   with: MouseColony-2.3.3-Windows-Setup.exe, MouseColony-2.3.3-Mac-AppleSilicon.pkg, MouseColony-2.3.3-Mac-Intel.pkg
+#   "Run workflow" on the Actions tab builds the same files as a test (downloadable from the run, no release).
+name: Build installers
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: Windows installer
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Version
+        id: v
+        run: python install/ci_version.py
+      - name: Install packages
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt "pyinstaller>=6.10"
+          python -m pip install tkinterdnd2
+          if ($LASTEXITCODE -ne 0) { Write-Host "tkinterdnd2 not available - building without drag and drop"; $global:LASTEXITCODE = 0 }
+      - name: Build the program (PyInstaller)
+        run: python -m PyInstaller --noconfirm --distpath dist --workpath build install/mousecolony.spec
+      - name: Self-test of the built program
+        run: |
+          $p = Start-Process -FilePath "dist\MouseColony\MouseColony.exe" -ArgumentList "--selftest","selftest.txt" -Wait -PassThru
+          Get-Content selftest.txt
+          if ($p.ExitCode -ne 0) { throw "Self-test failed" }
+      - name: Build the installer (Inno Setup)
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
+          & $iscc "/DMyAppVersion=${{ steps.v.outputs.version }}" install\windows_installer.iss
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/MouseColony-*-Windows-Setup.exe
+          if-no-files-found: error
+
+  mac:
+    name: Mac installer (${{ matrix.label }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: AppleSilicon
+            runner: macos-15            # Apple silicon (arm64) machine
+            hostarch: arm64
+          - label: Intel
+            runner: macos-15-intel      # Intel machine; the Intel package also runs on Apple silicon (Rosetta)
+            hostarch: x86_64,arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Version
+        id: v
+        run: python install/ci_version.py
+      - name: Install packages
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt "pyinstaller>=6.10"
+          python -m pip install tkinterdnd2 || echo "tkinterdnd2 not available - building without drag and drop"
+      - name: Build the app (PyInstaller)
+        run: python -m PyInstaller --noconfirm --distpath dist --workpath build install/mousecolony.spec
+      - name: Self-test of the built app
+        run: |
+          uname -m
+          rc=0
+          "dist/Mouse Colony.app/Contents/MacOS/MouseColony" --selftest selftest.txt || rc=$?
+          cat selftest.txt
+          exit $rc
+      - name: Build the installer package
+        run: bash install/make_pkg.sh "${{ steps.v.outputs.version }}" "${{ matrix.label }}" "${{ matrix.hostarch }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-${{ matrix.label }}
+          path: dist/MouseColony-*-Mac-*.pkg
+          if-no-files-found: error
+
+  release:
+    name: Attach to the release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [windows, mac]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - run: ls -la out
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: Mouse Colony ${{ github.ref_name }}
+          files: out/*
+          generate_release_notes: true
+          body: |
+            **Download the installer for your computer:**
+            - **Windows:** `MouseColony-…-Windows-Setup.exe`. If Windows shows "Windows protected your PC", click *More info → Run anyway*. No admin rights needed.
+            - **Mac with Apple silicon (M1–M4…):** `MouseColony-…-Mac-AppleSilicon.pkg`
+            - **Older Mac with an Intel processor:** `MouseColony-…-Mac-Intel.pkg`
+
+            On a Mac, if it says the package "can't be opened" or is from an unidentified developer: right-click it → **Open** → **Open**
+            (or System Settings → Privacy & Security → **Open Anyway**). The app is then in Applications.
+            Updating: install the new version over the old one; settings, backups and the shared-sheet connection are kept.
