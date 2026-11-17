@@ -1,7 +1,28 @@
 # Mouse Colony
 
-Breeder ages, relatedness (inbreeding) check and pair suggestions for the Völgyi lab mouse colony.
-Works on the workbook `Volgyi_mice_colony.xlsx` (Breeders, Pairs, Cages, Lines, Litters sheets).
+Mouse Colony keeps track of a lab's mouse breeding colony: breeding pairs, cages and every individual mouse with its
+ear mark and genotype. It warns when breeders get too old, checks relatedness to avoid inbreeding, predicts the
+genotypes of the pups and keeps a history of procedures and terminations. Colleagues can share one Google Sheet, and
+cage cards or pages of the animal-house log can be read from photos.
+
+## Screenshots
+
+The pictures show a made-up demo colony.
+
+![Overview of every line and breeding pair, with the age of the oldest animal, a replace-by date and relatedness warnings](docs/screenshots/overview.jpg)
+
+![All mice, each cage opened to its individual mice with ear marks, parents and genotypes; mice still to be genotyped are highlighted](docs/screenshots/all-mice.jpg)
+
+![Pairing check for a planned cross, showing breeding age left, the inbreeding coefficient and the expected pup genotypes](docs/screenshots/pairing-check.jpg)
+
+![Animal-house log rows read from a photo: animals taken out become terminations and moves become cage changes, confirmed before applying](docs/screenshots/log-review.jpg)
+
+![Cage cards read from photos compared with the colony: a new cage, a changed birth date and a lower count to check](docs/screenshots/card-review.jpg)
+
+![The phone version: a searchable cage list, a cage with its ear-marked mice and quick actions, and breeder ages](docs/screenshots/phone-app.jpg)
+
+The colony data lives in the workbook `Volgyi_mice_colony.xlsx` (sheets Breeders, Pairs, Cages, Mice, Lines,
+Litters, Procedures, Terminated) or in the shared Google Sheet made from it.
 
 ## Installing
 
@@ -12,10 +33,9 @@ right-click the .pkg → *Open*. New installers are built automatically for ever
 
 The scripts below install from the source files instead (needs Python):
 
-
 **Windows:** unzip, then double-click **`install_windows.bat`**. You don't need admin rights.
 It finds Python 3.8+ (python.org or Anaconda), creates a private environment in
-`%LOCALAPPDATA%\MouseColony`, installs openpyxl and adds a **Mouse Colony** shortcut to the Desktop and
+`%LOCALAPPDATA%\MouseColony`, installs the packages it needs and adds a **Mouse Colony** shortcut to the Desktop and
 the Start menu. If you don't have Python yet, install it from python.org first and tick
 "Add python.exe to PATH".
 If Windows shows "Windows protected your PC", click *More info → Run anyway*. To avoid that,
@@ -34,7 +54,7 @@ recommended; use a screen of at least 1280x720.
 your own PC, run `install\build_standalone_windows.bat`. It produces `dist\MouseColony\` with
 `MouseColony.exe` (about 30 MB). Zip that folder and copy it over; nothing to install there.
 
-**Manual:** `pip install openpyxl`, then `python mouse_colony_tool.py [workbook.xlsx]`.
+**Manual:** `pip install -r requirements.txt`, then `python mouse_colony_tool.py [workbook.xlsx]`.
 
 ## The workbook
 
