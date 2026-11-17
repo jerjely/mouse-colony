@@ -19,7 +19,7 @@ import sys
 import openpyxl
 
 APP_NAME = 'Mouse Colony'
-VERSION = '2.3'
+VERSION = '2.3.2'
 WORKBOOK_NAME = 'Volgyi_mice_colony.xlsx'
 
 
@@ -1944,6 +1944,9 @@ class Colony:
 
     def terminate_mice(self, ids, date, outcome, reason='', project='', person='', notes=''):
         """One history row per mouse; the mouse (and its breeder row, if it was one) becomes Terminated."""
+        ids = [i for i in ids if i in self.mice and self.mice[i]['status'] == 'Alive']
+        if not ids:
+            return
         wb = self._open_for_write()
         cages = set()
         for mid in ids:
@@ -2653,9 +2656,10 @@ class Colony:
         return '|'.join([_s(ev.get('date')), self.norm_cage(ev.get('cage')), self.event_kind(ev),
                          str(int(ev.get('males') or 0)), str(int(ev.get('females') or 0)), to])
 
-    def _pick_mice(self, cage, males, females):
-        """Mice of the requested sexes from a stock cage (first by ear mark). Returns (ids, problem)."""
-        mice = self.mice_in(cage)
+    def _pick_mice(self, cage, males, females, claimed=()):
+        """Mice of the requested sexes from a stock cage (first by ear mark), skipping mice another row of the same
+        import already uses. Returns (ids, problem)."""
+        mice = [m for m in self.mice_in(cage) if m['id'] not in claimed]
         want = {'M': males, 'F': females}
         ids, short = [], []
         for sx, n in want.items():
@@ -2670,6 +2674,19 @@ class Colony:
     def compare_events(self, data):
         """Animal-house log rows -> change dicts like compare_cards, plus 'date' and 'key'."""
         out = []
+        claimed = set()                  # mice / breeders already used by an earlier row of this import
+        # cages that receive a male AND a female by áthelyezés in this import = a new breeding pair
+        got = {}
+        for ev in data.get('events', []):
+            if self.event_kind(ev) == 'moved':
+                for t in ev.get('to') or []:
+                    if isinstance(t, dict) and _s(t.get('cage')):
+                        tm = int(t.get('males') or 0) if ('males' in t or 'females' in t) else int(ev.get('males') or 0)
+                        tf = int(t.get('females') or 0) if ('males' in t or 'females' in t) else int(ev.get('females') or 0)
+                        g = got.setdefault((self.norm_cage(t['cage']), _s(ev.get('date'))), [0, 0])
+                        g[0] += tm
+                        g[1] += tf
+        new_pairs = {k[0] for k, (gm, gf) in got.items() if gm and gf}
         for ev in data.get('events', []):
             cage = self.norm_cage(ev.get('cage'))
             kind = self.event_kind(ev)
@@ -2712,7 +2729,8 @@ class Colony:
             if kind in ('removed', 'died'):
                 outcome = 'Found dead' if kind == 'died' else 'Terminated - experiment'
                 if pair:
-                    mem = [(bid, self.breeders[bid]) for bid in self.pair_members(pair) if bid in self.breeders]
+                    mem = [(bid, self.breeders[bid]) for bid in self.pair_members(pair) if bid in self.breeders
+                           and bid not in claimed]
                     ids = [b for b, x in mem if x['sex'] == 'M'][:males] + [b for b, x in mem if x['sex'] == 'F'][:females]
                     if len(ids) != males + females:
                         add('Breeding cage: these animals are not all breeders - do it by hand', ', '.join(
@@ -2721,16 +2739,18 @@ class Colony:
                     add(f'{"Found dead" if kind == "died" else "Taken out (kivitel)"}: breeders {", ".join(ids)}',
                         'breeding cage ' + ', '.join(self.pair_members(pair)), 'term_breeders',
                         value=dict(ids=ids, outcome=outcome))
+                    claimed.update(ids)
                     continue
                 if self.mice_in(cage):
-                    ids, problem = self._pick_mice(cage, males, females)
+                    ids, problem = self._pick_mice(cage, males, females, claimed)
                     if problem:
                         add(f'Not enough mice ({problem})', f'{len(self.mice_in(cage))} mice', 'info')
                         continue
                     lab = ', '.join(f"{i} ({self.mice[i]['mark']})" for i in ids)
+                    left = len([m for m in self.mice_in(cage) if m['id'] not in claimed])
                     add(f'{"Found dead" if kind == "died" else "Taken out (kivitel)"}: {lab}',
-                        f"{len(self.mice_in(cage))} {c['sex']} {c['line']}", 'term_mice',
-                        value=dict(ids=ids, outcome=outcome))
+                        f"{left} {c['sex']} {c['line']}", 'term_mice', value=dict(ids=ids, outcome=outcome))
+                    claimed.update(ids)
                     continue
                 n = males + females
                 if not c['count'] or n > c['count']:
@@ -2757,10 +2777,11 @@ class Colony:
                 if not self.cage(dest):
                     add(f'Unknown target cage {t.get("cage")}', '', 'info')
                     continue
-                if self.active_pair(dest):
-                    add(f'Target {self.card_name(dest)} is a breeding cage - set up the pair by hand', '', 'info')
+                if self.active_pair(dest) or dest in new_pairs:
+                    add(f'New breeding pair in {self.card_name(dest)} - set it up by hand (Pairing check -> Create '
+                        f'this pair)', '', 'info')
                     continue
-                ids, problem = self._pick_mice(cage, tm, tf)
+                ids, problem = self._pick_mice(cage, tm, tf, claimed)
                 if problem or not ids:
                     add(f'Not enough mice to move ({problem or "none listed"})', f'{len(self.mice_in(cage))} mice',
                         'info')
@@ -2770,6 +2791,7 @@ class Colony:
                     f"{len(self.mice_in(cage))} here" + (f'; {len(there)} already in {self.card_name(dest)}'
                                                           if there else ''), 'move',
                     value=dict(ids=ids, dest=dest))
+                claimed.update(ids)
         return out
 
     def move_mice(self, ids, dest):
@@ -5172,18 +5194,19 @@ def run_gui(path=None):
         return {'add': lambda: card_form(d, add_card), 'win': d}
 
     def handle_records(data, label):
-        """Cards and/or log events from a file, a paste or photos: card review first, then the events review."""
+        """Cards and/or log events from a file, a paste or photos: the log review first, then the card review."""
         cards, events = data.get('cards') or [], data.get('events') or []
         if not cards and not events:
             messagebox.showinfo('Import', 'No cage cards or log rows in it.')
             return
-        if cards:
-            rv = review_cards(dict(data, cards=cards),
-                              f'{label}: check the values against the cards' if label == 'Gemini read' else label)
-            if events:
-                root.wait_window(rv['win'])
+        # log rows first (e.g. old mice taken out of a cage), then the cards (the new mice in it)
         if events:
-            review_events(dict(data, events=events), label)
+            rv = review_events(dict(data, events=events), label)
+            if cards and rv:
+                root.wait_window(rv)
+        if cards:
+            review_cards(dict(data, cards=cards),
+                         f'{label}: check the values against the cards' if label == 'Gemini read' else label)
 
     def review_events(data, label):
         """Animal-house log rows: kivitel -> terminate, áthelyezés -> move. Applied rows are remembered."""
@@ -5266,6 +5289,7 @@ def run_gui(path=None):
             messagebox.showinfo('Animal-house log', f'{n} log row(s) applied.')
         ttk.Button(bar, text='Apply ticked changes', command=ok).pack(side='right')
         ttk.Button(bar, text='Cancel', command=d.destroy).pack(side='right', padx=6)
+        return d
 
     def save_cards_json(data):
         import json
