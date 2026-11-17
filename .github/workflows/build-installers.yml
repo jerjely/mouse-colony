@@ -12,13 +12,18 @@ on:
 permissions:
   contents: write
 
+env:
+  # use only ready-made (wheel) builds of cryptography: compiling it on the build machine links it to that machine's
+  # OpenSSL, which clashes with the OpenSSL bundled with Python inside the app (seen on Intel Macs)
+  PIP_ONLY_BINARY: cryptography
+
 jobs:
   windows:
     name: Windows installer
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Version
@@ -63,8 +68,8 @@ jobs:
             hostarch: x86_64,arm64
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Version
@@ -75,6 +80,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt "pyinstaller>=6.10"
           python -m pip install tkinterdnd2 || echo "tkinterdnd2 not available - building without drag and drop"
+          python -m pip show cryptography | head -2
       - name: Build the app (PyInstaller)
         run: python -m PyInstaller --noconfirm --distpath dist --workpath build install/mousecolony.spec
       - name: Self-test of the built app
@@ -94,7 +100,8 @@ jobs:
 
   release:
     name: Attach to the release
-    if: startsWith(github.ref, 'refs/tags/')
+    # runs even if one installer failed, and attaches the ones that were built
+    if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/') }}
     needs: [windows, mac]
     runs-on: ubuntu-latest
     steps:
@@ -102,7 +109,11 @@ jobs:
         with:
           path: out
           merge-multiple: true
-      - run: ls -la out
+        continue-on-error: true
+      - name: Built installers
+        run: |
+          ls -la out
+          ls out/* >/dev/null 2>&1 || { echo "::error::No installer was built"; exit 1; }
       - uses: softprops/action-gh-release@v2
         with:
           name: Mouse Colony ${{ github.ref_name }}

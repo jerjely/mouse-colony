@@ -19,7 +19,7 @@ import sys
 import openpyxl
 
 APP_NAME = 'Mouse Colony'
-VERSION = '2.3.3'
+VERSION = '2.3.4'
 WORKBOOK_NAME = 'Volgyi_mice_colony.xlsx'
 
 
