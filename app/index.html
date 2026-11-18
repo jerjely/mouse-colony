@@ -92,7 +92,8 @@ h3{font-size:15px;margin:16px 0 6px}
    Mouse Colony - phone app. Reads and writes the same Google Sheet as the desktop program, in the same
    layout (sheets Breeders, Pairs, Cages, Mice, Lines, Settings, Procedures, Terminated, Imported events).
    ==================================================================================================== */
-const APP_VERSION = '1.0';
+const APP_VERSION = '1.0.1';
+function clientIdFrom(t){ const m = String(t || '').replace(/\s+/g, '').match(/[0-9]+-[a-z0-9]+\.apps\.googleusercontent\.com/i); return m ? m[0].toLowerCase() : String(t || '').trim(); }
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets openid email';
 const GEMINI_DEFAULT_MODEL = 'gemini-3.8-flash', GEMINI_FALLBACK_MODEL = 'gemini-flash-latest';
 const EAR_MARKS = ['none','L','R','LR','L2','R2','L2R','LR2','L2R2'];
@@ -158,7 +159,7 @@ let cfg = Object.assign({sheetId:'', clientId:'', gemKey:'', model:GEMINI_DEFAUL
   const q = new URLSearchParams(location.search);
   let changed = false;
   if (q.get('sheet')) { cfg.sheetId = sheetIdFrom(q.get('sheet')); changed = true; }
-  if (q.get('client')) { cfg.clientId = q.get('client'); changed = true; }
+  if (q.get('client')) { cfg.clientId = clientIdFrom(q.get('client')); changed = true; }
   if (changed) { store('mc_cfg', cfg); history.replaceState(null, '', location.pathname + (q.get('demo') ? '?demo=1' : '')); }
 })();
 function sheetIdFrom(t){ const m = String(t||'').match(/\/spreadsheets\/d\/([A-Za-z0-9_-]+)/); return m ? m[1] : String(t||'').trim(); }
@@ -176,9 +177,10 @@ let token = store('mc_token');        // {access, exp, email}
 function tokenOk(minLeftMs){ return DEMO || (token && token.access && token.exp - Date.now() > (minLeftMs || 60000)); }
 function signIn(){
   if (!cfg.clientId) { toast('Enter the web login ID in Settings first.'); go('more'); return; }
+  if (!/^[0-9]+-[a-z0-9]+\.apps\.googleusercontent\.com$/.test(cfg.clientId)) { toast('The web login ID looks wrong: copy the Client ID (ends with .apps.googleusercontent.com) of the Web application client.'); go('more'); return; }
   const redirect = location.origin + location.pathname.replace(/index\.html$/, '');
   const u = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({client_id: cfg.clientId, redirect_uri: redirect,
-    response_type: 'token', scope: SCOPES, include_granted_scopes: 'true', ...(token && token.email ? {login_hint: token.email} : {})});
+    response_type: 'token', scope: SCOPES, include_granted_scopes: 'true', prompt: 'select_account', ...(token && token.email ? {login_hint: token.email} : {})});
   location.href = u;
 }
 function signOut(){ token = null; store('mc_token', null); render(); }
@@ -902,7 +904,7 @@ async function review(data, label){
 function settingsView(){
   return `<div class="card"><b>Shared colony sheet</b>
     <label class="f">Google Sheet link</label><input id="sSheet" value="${esc(cfg.sheetId ? 'https://docs.google.com/spreadsheets/d/' + cfg.sheetId : '')}" placeholder="https://docs.google.com/spreadsheets/d/...">
-    <label class="f">Web login ID (OAuth client ID, ends with .apps.googleusercontent.com)</label><input id="sClient" value="${esc(cfg.clientId)}">
+    <label class="f">Web login ID (OAuth client ID, ends with .apps.googleusercontent.com)</label><input id="sClient" value="${esc(cfg.clientId)}" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false">
     <label class="f">Your name (used as "Person" and in the change log)</label><input id="sUser" value="${esc(cfg.user)}">
     <div class="btns"><button class="b" onclick="saveSettings()">Save</button>${tokenOk() && !DEMO ? '<button class="b2" onclick="signOut()">Sign out</button>' : '<button class="b2" onclick="saveSettings(true)">Save and sign in</button>'}</div>
     <p class="sub">${token && token.email ? 'Signed in as ' + esc(token.email) + '.' : ''} Google asks for a new sign-in about every hour; it is quick after the first time.</p></div>
@@ -919,7 +921,7 @@ function settingsView(){
 }
 function saveSettings(thenSignIn){
   const v = id => ($('#' + id) || {}).value;
-  if (v('sSheet') !== undefined) { cfg.sheetId = sheetIdFrom(v('sSheet')); cfg.clientId = (v('sClient') || '').trim(); cfg.user = (v('sUser') || '').trim(); }
+  if (v('sSheet') !== undefined) { cfg.sheetId = sheetIdFrom(v('sSheet')); cfg.clientId = clientIdFrom(v('sClient')); cfg.user = (v('sUser') || '').trim(); }
   if (v('sGem') !== undefined) { cfg.gemKey = (v('sGem') || '').trim(); cfg.model = (v('sModel') || '').trim() || GEMINI_DEFAULT_MODEL; }
   store('mc_cfg', cfg); makeBackend();
   if (thenSignIn) return signIn();
