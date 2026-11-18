@@ -19,7 +19,7 @@ import sys
 import openpyxl
 
 APP_NAME = 'Mouse Colony'
-VERSION = '2.3.4'
+VERSION = '2.4.0'
 WORKBOOK_NAME = 'Volgyi_mice_colony.xlsx'
 
 
@@ -2895,6 +2895,229 @@ class Colony:
         return created
 
 
+
+# --------------------------------------------------------------------------
+# Look: the phone app's colours (navy header, white cards, blue accent)
+# --------------------------------------------------------------------------
+THEME = dict(bg='#f4f5f7', panel='#ffffff', field='#ffffff', raised='#ffffff', hover='#f0f4fb', press='#e4ebf7',
+             line='#e3e6eb', line2='#d0d5dd', ink='#1d2330', bright='#ffffff', mute='#667085', dim='#a0a7b4',
+             cyan='#2563eb', pink='#2563eb', mag='#2563eb', blue='#2563eb', acc_h='#1d4ed8', acc_d='#a9bdf0',
+             head='#f4f5f7', head_ink='#475467', sel='#2563eb', tab='#e9ecf1', tabsel='#ffffff',
+             brand='#1F3A5F', brand_sub='#c9d6ea', ok='#2E6B26', warn='#7A5A00', bad='#8A2B0E', info_ink='#1F4E78')
+
+
+LOGO_PNG = (
+    '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')
+
+
+def _grad_image(tk, w, h, c1, c2, radius=6, bg=None):
+    """Horizontal gradient with rounded corners (transparent outside), as a Tk PhotoImage."""
+    img = tk.PhotoImage(width=w, height=h)
+    a = [int(c1[i:i + 2], 16) for i in (1, 3, 5)]
+    b = [int(c2[i:i + 2], 16) for i in (1, 3, 5)]
+    row = ' '.join('#%02x%02x%02x' % tuple(int(a[k] + (b[k] - a[k]) * x / max(1, w - 1)) for k in range(3))
+                   for x in range(w))
+    img.put(' '.join('{' + row + '}' for _ in range(h)))
+    for y in range(radius):
+        for x in range(radius):
+            if (radius - x - .5) ** 2 + (radius - y - .5) ** 2 > radius ** 2:
+                for xx, yy in ((x, y), (w - 1 - x, y), (x, h - 1 - y), (w - 1 - x, h - 1 - y)):
+                    img.put(bg or THEME['bg'], to=(xx, yy, xx + 1, yy + 1))
+    return img
+
+
+def _solid_image(tk, w, h, fill, border=None, radius=6, bottom=None, bottom_h=0, round_bottom=True):
+    img = tk.PhotoImage(width=w, height=h)
+    img.put(fill, to=(0, 0, w, h))
+    if border:
+        img.put(border, to=(0, 0, w, 1)); img.put(border, to=(0, 0, 1, h)); img.put(border, to=(w - 1, 0, w, h))
+        if round_bottom:
+            img.put(border, to=(0, h - 1, w, h))
+    if bottom:
+        img.put(bottom, to=(0, h - bottom_h, w, h))
+    for y in range(radius):
+        for x in range(radius):
+            if (radius - x - .5) ** 2 + (radius - y - .5) ** 2 > radius ** 2:
+                pts = [(x, y), (w - 1 - x, y)] + ([(x, h - 1 - y), (w - 1 - x, h - 1 - y)] if round_bottom else [])
+                for xx, yy in pts:
+                    img.put(THEME['bg'], to=(xx, yy, xx + 1, yy + 1))
+    return img
+
+
+def apply_theme(root, tk, ttk):
+    T = THEME
+    st = ttk.Style(root)
+    try:
+        st.theme_use('clam')
+    except tk.TclError:
+        pass
+    imgs = {}
+    root.configure(bg=T['bg'])
+    for opt, val in (('*Toplevel.background', T['bg']), ('*Background', T['bg']), ('*Foreground', T['ink']),
+                     ('*Text.background', T['field']), ('*Text.foreground', T['ink']),
+                     ('*Text.insertBackground', T['cyan']), ('*Listbox.background', T['field']),
+                     ('*Listbox.foreground', T['ink']), ('*Listbox.selectBackground', T['sel']),
+                     ('*Listbox.selectForeground', '#ffffff'), ('*TCombobox*Listbox.background', T['field']),
+                     ('*TCombobox*Listbox.foreground', T['ink']), ('*TCombobox*Listbox.selectBackground', T['sel']),
+                     ('*Menu.background', T['panel']), ('*Menu.foreground', T['ink']),
+                     ('*Menu.activeBackground', T['sel']), ('*Canvas.background', T['bg']),
+                     ('*Label.background', T['bg']), ('*Label.foreground', T['ink'])):
+        root.option_add(opt, val)
+    st.configure('.', background=T['bg'], foreground=T['ink'], fieldbackground=T['field'], bordercolor=T['line'],
+                 lightcolor=T['line'], darkcolor=T['line'], troughcolor=T['panel'], focuscolor=T['cyan'],
+                 selectbackground=T['sel'], selectforeground='#ffffff', insertcolor=T['cyan'], arrowcolor=T['mute'])
+    st.map('.', foreground=[('disabled', T['dim'])])
+    st.configure('TFrame', background=T['bg'])
+    st.configure('Card.TFrame', background=T['panel'])
+    st.configure('TLabel', background=T['bg'], foreground=T['ink'])
+    st.configure('Muted.TLabel', foreground=T['mute'])
+    st.configure('Section.TLabel', foreground=T['brand'], font=('TkDefaultFont', 10, 'bold'))
+    st.configure('Header.TFrame', background=T['brand'])
+    st.configure('Title.TLabel', background=T['brand'], foreground='#ffffff', font=('TkDefaultFont', 15, 'bold'))
+    st.configure('Sub.TLabel', background=T['brand'], foreground=T['brand_sub'])
+    # buttons: rounded navy; primary = magenta -> blue gradient
+    imgs['btn'] = _solid_image(tk, 24, 24, T['raised'], T['line2'])
+    imgs['btn_h'] = _solid_image(tk, 24, 24, T['hover'], T['cyan'])
+    imgs['btn_p'] = _solid_image(tk, 24, 24, T['press'], T['cyan'])
+    imgs['btn_d'] = _solid_image(tk, 24, 24, T['bg'], T['line'])
+    st.element_create('Nav.button', 'image', imgs['btn'], ('disabled', imgs['btn_d']), ('pressed', imgs['btn_p']),
+                      ('active', imgs['btn_h']), border=7, sticky='nsew')
+    st.layout('TButton', [('Nav.button', {'sticky': 'nsew', 'children': [('Button.padding', {'sticky': 'nsew',
+              'children': [('Button.label', {'sticky': 'nsew'})]})]})])
+    st.configure('TButton', padding=(10, 4), foreground=T['ink'], background=T['raised'], anchor='center')
+    st.map('TButton', foreground=[('disabled', T['dim'])])
+    # primary buttons get their own gradient picture, exactly as wide as their text (see accent_paint)
+    st.layout('Accent.TButton', [('Button.padding', {'sticky': 'nsew', 'children': [
+              ('Button.label', {'sticky': 'nsew'})]})])
+    st.configure('Accent.TButton', padding=0, foreground='#ffffff', background=T['bg'],
+                 font=('TkDefaultFont', 9, 'bold'), anchor='center', relief='flat', borderwidth=0)
+    st.map('Accent.TButton', foreground=[('disabled', '#eef2ff')], background=[('active', T['bg'])])
+    from tkinter import font as tkfont
+    probe = ttk.Button(root, text='Xg')
+    btn_h = max(26, probe.winfo_reqheight())
+    probe.destroy()
+    cache = {}
+
+    def accent_paint(e):
+        w = e.widget
+        try:
+            if str(w.cget('style')) != 'Accent.TButton' or getattr(w, '_painted', None) == str(w.cget('text')):
+                return
+            f = tkfont.nametofont('TkDefaultFont').copy()
+            f.configure(weight='bold')
+            width = f.measure(str(w.cget('text'))) + 30
+            if width not in cache:
+                cache[width] = (_grad_image(tk, width, btn_h, T['mag'], T['blue']),
+                                _grad_image(tk, width, btn_h, T['acc_h'], T['acc_h']),
+                                _grad_image(tk, width, btn_h, T['acc_d'], T['acc_d']))
+            g, gh, gd = cache[width]
+            w.configure(image=(g, 'disabled', gd, 'active', gh), compound='center')
+            w._painted = str(w.cget('text'))
+        except tk.TclError:
+            pass
+    root.bind_class('TButton', '<Map>', accent_paint, add='+')
+    imgs['accent_cache'] = cache
+    # entries, comboboxes, spinboxes
+    for w in ('TEntry', 'TCombobox', 'TSpinbox'):
+        st.configure(w, fieldbackground=T['field'], foreground=T['ink'], bordercolor=T['line'],
+                     lightcolor=T['field'], darkcolor=T['field'], padding=4, insertcolor=T['cyan'],
+                     arrowcolor=T['mute'], background=T['raised'])
+        st.map(w, bordercolor=[('focus', T['cyan'])], lightcolor=[('focus', T['cyan'])],
+               fieldbackground=[('readonly', T['field']), ('disabled', T['panel'])],
+               foreground=[('disabled', T['dim'])], arrowcolor=[('active', T['cyan'])],
+               background=[('active', T['hover'])], selectbackground=[('readonly', T['field'])],
+               selectforeground=[('readonly', T['ink'])])
+    # check boxes: rounded box, blue with a white tick when on
+    def box(on, hover=False):
+        n = 16
+        img = _solid_image(tk, n, n, T['pink'] if on else (T['raised'] if hover else T['field']),
+                           T['pink'] if on else (T['cyan'] if hover else T['line2']), radius=3)
+        if on:
+            for x, y in ((3, 8), (4, 9), (5, 10), (6, 11), (7, 10), (8, 9), (9, 8), (10, 7), (11, 6), (12, 5)):
+                img.put('#ffffff', to=(x, y - 1, x + 1, y + 1))
+        out = tk.PhotoImage(width=n + 6, height=n)
+        out.put(T['bg'], to=(0, 0, n + 6, n))
+        out.tk.call(out, 'copy', img)
+        imgs['_cb%d' % len(imgs)] = img
+        return out
+    imgs['cb0'], imgs['cb0h'], imgs['cb1'] = box(False), box(False, True), box(True)
+    st.element_create('Nav.check', 'image', imgs['cb0'], ('selected', imgs['cb1']), ('active', imgs['cb0h']),
+                      sticky='w', padding=(0, 0, 6, 0))
+    st.layout('TCheckbutton', [('Checkbutton.padding', {'sticky': 'nsew', 'children': [
+              ('Nav.check', {'side': 'left', 'sticky': ''}), ('Checkbutton.label', {'side': 'left', 'sticky': 'nsew'})]})])
+    for w in ('TCheckbutton', 'TRadiobutton'):
+        st.configure(w, background=T['bg'], foreground=T['ink'], indicatorbackground=T['field'],
+                     indicatorforeground='#ffffff', upperbordercolor=T['line2'], lowerbordercolor=T['line2'])
+        st.map(w, background=[('active', T['bg'])], indicatorbackground=[('selected', T['pink']),
+               ('active', T['raised'])], foreground=[('disabled', T['dim'])])
+    # notebook: rounded tabs, blue line under the open tab (like the phone app's bottom bar)
+    st.configure('TNotebook', background=T['bg'], bordercolor=T['line'], lightcolor=T['bg'], darkcolor=T['bg'],
+                 tabmargins=(6, 6, 6, 0))
+    imgs['tab'] = _solid_image(tk, 24, 24, T['tab'], None, round_bottom=False)
+    imgs['tab_h'] = _solid_image(tk, 24, 24, T['hover'], None, round_bottom=False)
+    imgs['tab_s'] = _solid_image(tk, 24, 24, T['tabsel'], None, bottom=T['pink'], bottom_h=2, round_bottom=False)
+    st.element_create('Nav.tab', 'image', imgs['tab'], ('selected', imgs['tab_s']), ('active', imgs['tab_h']),
+                      border=(7, 7, 7, 3), sticky='nsew')
+    st.layout('TNotebook.Tab', [('Nav.tab', {'sticky': 'nsew', 'children': [('Notebook.padding', {
+              'side': 'top', 'sticky': 'nsew', 'children': [('Notebook.label', {'side': 'top', 'sticky': ''})]})]})])
+    st.configure('TNotebook.Tab', padding=(16, 7), foreground=T['mute'], font=('TkDefaultFont', 9, 'bold'))
+    st.map('TNotebook.Tab', foreground=[('selected', T['cyan']), ('active', T['ink'])], expand=[('selected', (0, 0))])
+    # tables
+    st.configure('Treeview', background=T['panel'], fieldbackground=T['panel'], foreground=T['ink'],
+                 bordercolor=T['line'], lightcolor=T['panel'], darkcolor=T['panel'], rowheight=25)
+    st.map('Treeview', background=[('selected', T['sel'])], foreground=[('selected', '#ffffff')])
+    st.configure('Treeview.Heading', background=T['head'], foreground=T['head_ink'], bordercolor=T['line'],
+                 lightcolor=T['head'], darkcolor=T['head'], relief='flat', padding=(4, 4),
+                 font=('TkDefaultFont', 9, 'bold'))
+    st.map('Treeview.Heading', background=[('active', T['raised'])], foreground=[('active', T['cyan'])])
+    st.configure('TScrollbar', background=T['raised'], troughcolor=T['bg'], bordercolor=T['bg'],
+                 lightcolor=T['raised'], darkcolor=T['raised'], arrowcolor=T['mute'], gripcount=0, relief='flat')
+    st.map('TScrollbar', background=[('active', T['hover'])], arrowcolor=[('active', T['cyan'])])
+    st.configure('TLabelframe', background=T['bg'], bordercolor=T['line'], lightcolor=T['line'],
+                 darkcolor=T['line'], relief='solid', borderwidth=1)
+    st.configure('TLabelframe.Label', background=T['bg'], foreground=T['brand'], font=('TkDefaultFont', 9, 'bold'))
+    st.configure('Horizontal.TProgressbar', background=T['pink'], troughcolor=T['panel'], bordercolor=T['line'],
+                 lightcolor=T['cyan'], darkcolor=T['mag'])
+    st.configure('TSeparator', background=T['line'])
+    st.configure('TPanedwindow', background=T['bg'])
+    st.configure('Sash', sashthickness=6, background=T['head'])
+
+    root._theme_imgs = imgs
+    return st
+
+
 # --------------------------------------------------------------------------
 # GUI
 # --------------------------------------------------------------------------
@@ -2908,6 +3131,7 @@ def run_gui(path=None):
               'Retired': '#EDEDED', 'pair': '#EDE7F6', 'empty': '#F7F7F7', 'Candidate': '#E2F0D9',
               'Stock': '#FFFFFF', 'Terminate': '#F8CBAD', 'Pair not on Pairs sheet': '#FFE699',
               'Terminated': '#E7D3D3', 'proc': '#EAF1FB'}
+    FG = {'empty': THEME['mute'], 'Retired': THEME['mute']}
 
     import traceback
     dnd_files = None
@@ -2937,13 +3161,7 @@ def run_gui(path=None):
         log_error(''.join(traceback.format_exception(etype, value, tb)))
         messagebox.showerror(APP_NAME, f'{value}\n\nDetails were written to\n{ERROR_LOG}')
     root.report_callback_exception = tk_error
-    style = ttk.Style()
-    try:
-        style.theme_use('clam')
-    except tk.TclError:
-        pass
-    style.configure('Treeview', rowheight=24)
-    style.configure('Treeview.Heading', font=('TkDefaultFont', 9, 'bold'))
+    style = apply_theme(root, tk, ttk)
 
     state = {'col': None}
 
@@ -2968,7 +3186,7 @@ def run_gui(path=None):
         frame.rowconfigure(0, weight=1)
         frame.columnconfigure(0, weight=1)
         for tag, col in COLORS.items():
-            tree.tag_configure(tag, background=col)
+            tree.tag_configure(tag, background=col, foreground=FG.get(tag, THEME['ink']))
         return frame, tree
 
     def sort_tree(tree, col):
@@ -3019,23 +3237,35 @@ def run_gui(path=None):
                 messagebox.showerror('Error', str(e))
         return wrapped
 
+    # ---------- header (logo + name) ----------
+    hdr = ttk.Frame(root, padding=(12, 8, 12, 8), style='Header.TFrame')
+    hdr.pack(fill='x')
+    try:
+        root._logo = tk.PhotoImage(data=LOGO_PNG)
+        tk.Label(hdr, image=root._logo, bg=THEME['brand'], bd=0).pack(side='left', padx=(0, 10))
+    except tk.TclError:
+        pass
+    ttk.Label(hdr, text='Mouse Colony', style='Title.TLabel').pack(side='left')
+    ttk.Label(hdr, text='    breeders · pairs · cages · genotypes', style='Sub.TLabel').pack(side='left', pady=(4, 0))
+    sync_var = tk.StringVar()
+    sync_lbl = tk.Label(hdr, textvariable=sync_var, font=('TkDefaultFont', 9, 'bold'), bg=THEME['brand'])
+    sync_lbl.pack(side='right')
+
     # ---------- top bar ----------
-    top = ttk.Frame(root, padding=6)
+    top = ttk.Frame(root, padding=(6, 8, 6, 2))
     top.pack(fill='x')
     path_var = tk.StringVar(value='No workbook loaded')
     ttk.Button(top, text='Shared database...', command=lambda: shared_dialog()).pack(side='left', padx=(0, 4))
     ttk.Button(top, text='Open workbook...', command=lambda: open_file()).pack(side='left')
     ttk.Button(top, text='Reload', command=lambda: reload()).pack(side='left', padx=4)
     ttk.Button(top, text='Import cage cards...', command=lambda: import_cards()).pack(side='left')
-    ttk.Button(top, text='Read card photos...', command=lambda: read_photos()).pack(side='left', padx=(4, 0))
+    ttk.Button(top, text='Read card photos...', style='Accent.TButton',
+               command=lambda: read_photos()).pack(side='left', padx=(4, 0))
     ttk.Button(top, text='Paste cards', command=lambda: paste_cards()).pack(side='left', padx=(4, 0))
     ttk.Button(top, text='Enter cage card...', command=lambda: enter_cards()).pack(side='left', padx=4)
-    ttk.Label(top, textvariable=path_var).pack(side='left', padx=10)
-    sync_var = tk.StringVar()
-    sync_lbl = tk.Label(top, textvariable=sync_var, font=('TkDefaultFont', 9, 'bold'))
-    sync_lbl.pack(side='left', padx=(0, 10))
+    ttk.Label(top, textvariable=path_var, style='Muted.TLabel').pack(side='left', padx=10)
     info_var = tk.StringVar()
-    ttk.Label(top, textvariable=info_var, foreground='#555').pack(side='right')
+    ttk.Label(top, textvariable=info_var, style='Muted.TLabel').pack(side='right')
 
     banner_var = tk.StringVar()
     banner = tk.Label(root, textvariable=banner_var, bg='#C00000', fg='white', font=('TkDefaultFont', 10, 'bold'),
@@ -3054,13 +3284,13 @@ def run_gui(path=None):
         if col.remote:
             if state.get('syncing'):
                 sync_var.set('Uploading...' if col.pending else 'Refreshing...')
-                sync_lbl.config(fg='#1a5fb4')
+                sync_lbl.config(fg='#9cc0ff')
             elif col.pending:
                 sync_var.set(f'{col.pending} change{"" if col.pending == 1 else "s"} not uploaded yet')
-                sync_lbl.config(fg='#B35C00')
+                sync_lbl.config(fg='#ffd76a')
             else:
                 sync_var.set('All saved to Google')
-                sync_lbl.config(fg='#2E7D32')
+                sync_lbl.config(fg='#9fe0a6')
         else:
             sync_var.set('')
         if col.remote and col.readonly:
@@ -3078,7 +3308,7 @@ def run_gui(path=None):
     # ---------- Overview ----------
     ov = ttk.Frame(nb, padding=6)
     nb.add(ov, text='Overview')
-    ttk.Label(ov, text='Lines', font=('TkDefaultFont', 10, 'bold')).pack(anchor='w')
+    ttk.Label(ov, text='Lines', style='Section.TLabel').pack(anchor='w')
     lf, lines_tree = make_tree(ov, ['Line', 'Must keep', 'Active pairs', 'Over age', 'Replace soon',
                                     'Candidate M', 'Candidate F', 'Status'],
                                [200, 70, 80, 70, 90, 90, 90, 160], height=9)
@@ -3092,7 +3322,7 @@ def run_gui(path=None):
     ttk.Button(olb, text='Edit alleles of selected line...', command=lambda: edit_line_alleles()).pack(side='left')
     ttk.Button(olb, text='Merge selected line into...', command=lambda: merge_line_dialog()).pack(side='left',
                                                                                                 padx=4)
-    ttk.Label(ov, text='Breeding pairs', font=('TkDefaultFont', 10, 'bold')).pack(anchor='w', pady=(8, 0))
+    ttk.Label(ov, text='Breeding pairs', style='Section.TLabel').pack(anchor='w', pady=(8, 0))
     pf, pairs_tree = make_tree(ov, ['Cage', 'Line', 'Male', 'Female(s)', 'Oldest', 'Age flag', 'Replace by',
                                     'Relatedness', 'Notes'], [60, 170, 60, 100, 70, 90, 90, 230, 200], height=12)
     pf.pack(fill='both', expand=True)
@@ -3132,7 +3362,7 @@ def run_gui(path=None):
         w.bind('<<ComboboxSelected>>', lambda e: refresh_all_mice())
     am_search.trace_add('write', lambda *a: refresh_all_mice())
     am_total = tk.StringVar()
-    ttk.Label(am, textvariable=am_total, font=('TkDefaultFont', 10, 'bold')).pack(anchor='w', pady=(6, 2))
+    ttk.Label(am, textvariable=am_total, style='Section.TLabel').pack(anchor='w', pady=(6, 2))
     amt, am_tree = make_tree(am, ['Cage / mouse', 'Line', 'Sex', 'Mice', 'Born', 'Age', 'Status', 'Animals',
                                   'Parents', 'Genotype', 'Note'],
                              [88, 160, 38, 42, 94, 60, 175, 190, 100, 210, 200], height=12, show='tree headings')
@@ -3140,7 +3370,7 @@ def run_gui(path=None):
     am_tree.tag_configure('mouse_proc', background='#F3F7FC')
     am_tree.tag_configure('todo', background='#FFE699', foreground='#7F4F00')
     amt.pack(fill='both', expand=True)
-    ttk.Label(am, text='Mice per line (filtered)', font=('TkDefaultFont', 10, 'bold')).pack(anchor='w',
+    ttk.Label(am, text='Mice per line (filtered)', style='Section.TLabel').pack(anchor='w',
                                                                                          pady=(6, 0))
     aml, am_lines_tree = make_tree(am, ['Line', 'Cages', 'Mice', 'Males', 'Females', 'In pairs',
                                         'Candidate cages'], [200, 60, 60, 60, 70, 70, 110], height=5)
@@ -3205,17 +3435,17 @@ def run_gui(path=None):
     ttk.Label(hif, text='Search').pack(side='left')
     h_search = tk.StringVar()
     ttk.Entry(hif, textvariable=h_search, width=18).pack(side='left', padx=(2, 8))
-    ttk.Button(hif, text='Apply', command=lambda: refresh_history()).pack(side='left')
+    ttk.Button(hif, text='Apply', style='Accent.TButton', command=lambda: refresh_history()).pack(side='left')
     ttk.Button(hif, text='Clear filters', command=lambda: clear_history_filters()).pack(side='left', padx=4)
     h_line.bind('<<ComboboxSelected>>', lambda e: refresh_history())
     h_search.trace_add('write', lambda *a: refresh_history())
     h_total = tk.StringVar()
-    ttk.Label(hi, textvariable=h_total, font=('TkDefaultFont', 10, 'bold')).pack(anchor='w', pady=(6, 2))
+    ttk.Label(hi, textvariable=h_total, style='Section.TLabel').pack(anchor='w', pady=(6, 2))
     htf, term_tree = make_tree(hi, ['Date', 'Cage', 'Animal', 'Line', 'Sex', 'Mice', 'Age', 'Outcome',
                                     'Reason / use', 'Project', 'Person', 'Genotype', 'Procedures done'],
                                [85, 62, 70, 150, 36, 40, 58, 160, 140, 90, 80, 150, 330], height=9)
     htf.pack(fill='both', expand=True)
-    ttk.Label(hi, text='Procedure log', font=('TkDefaultFont', 10, 'bold')).pack(anchor='w', pady=(8, 0))
+    ttk.Label(hi, text='Procedure log', style='Section.TLabel').pack(anchor='w', pady=(8, 0))
     hpf, proc_tree = make_tree(hi, ['Date', 'Cage', 'Animal', 'Line', 'Mice', 'Procedure', 'Details', 'Person',
                                     'Notes', 'Still alive?'],
                                [85, 62, 70, 150, 40, 150, 230, 90, 200, 90], height=7)
@@ -3225,7 +3455,7 @@ def run_gui(path=None):
     ttk.Button(hb, text='Delete selected procedure (mistake)', command=lambda: delete_selected_proc()).pack(
         side='left')
     ttk.Label(hb, text='  Terminations are permanent records - correct them in the Terminated sheet if needed.',
-              foreground='#555').pack(side='left')
+              foreground=THEME['mute']).pack(side='left')
     proc_rows = {}
 
     # ---------- Pairing check ----------
@@ -3242,9 +3472,10 @@ def run_gui(path=None):
     pc_all = tk.BooleanVar(value=False)
     ttk.Checkbutton(pc, text='List all animals (not only candidates)', variable=pc_all,
                     command=lambda: refresh_pc_lists()).grid(row=4, column=1, sticky='w')
-    ttk.Button(pc, text='Check', command=lambda: run_check()).grid(row=5, column=1, sticky='w', pady=6)
-    ttk.Button(pc, text='Create this pair...', command=lambda: create_from_check()).grid(row=5, column=1, padx=80,
-                                                                                         sticky='w')
+    pcb = ttk.Frame(pc)
+    pcb.grid(row=5, column=1, sticky='w', pady=6)
+    ttk.Button(pcb, text='Check', style='Accent.TButton', command=lambda: run_check()).pack(side='left')
+    ttk.Button(pcb, text='Create this pair...', command=lambda: create_from_check()).pack(side='left', padx=6)
     cf, check_tree = make_tree(pc, ['Result'], [1000], height=14)
     cf.grid(row=6, column=0, columnspan=4, sticky='nsew')
     pc.rowconfigure(6, weight=1)
@@ -3258,10 +3489,10 @@ def run_gui(path=None):
     ttk.Label(sgt, text='Line').pack(side='left')
     sg_line = ttk.Combobox(sgt, width=28, state='readonly')
     sg_line.pack(side='left', padx=4)
-    ttk.Button(sgt, text='Suggest', command=lambda: run_suggest()).pack(side='left')
+    ttk.Button(sgt, text='Suggest', style='Accent.TButton', command=lambda: run_suggest()).pack(side='left')
     ttk.Label(sgt, text='  Candidates: Reserve breeders + stock cages aged MinAge..StartMax, from the line\'s '
                         'allowed partner lines. Least related first, then longest breeding time left.',
-              foreground='#555').pack(side='left')
+              foreground=THEME['mute']).pack(side='left')
     sf, sug_tree = make_tree(sg, ['Male', 'Female', 'Offspring F', 'Risk', 'Relationship', 'Breeding days left',
                                   'Expected pups'],
                              [230, 230, 80, 170, 160, 100, 300], height=20)
@@ -3278,7 +3509,7 @@ def run_gui(path=None):
     du_days.set(90)
     du_days.pack(side='left', padx=4)
     ttk.Label(dut, text='days').pack(side='left')
-    ttk.Button(dut, text='Show', command=lambda: refresh_due()).pack(side='left', padx=6)
+    ttk.Button(dut, text='Show', style='Accent.TButton', command=lambda: refresh_due()).pack(side='left', padx=6)
     df, due_tree = make_tree(du, ['Cage', 'Line', 'Animals', 'Oldest', 'Replace by', 'Candidate M', 'Candidate F'],
                              [60, 180, 140, 70, 90, 300, 300], height=20)
     df.pack(fill='both', expand=True, pady=4)
@@ -3287,7 +3518,7 @@ def run_gui(path=None):
     wl = ttk.Frame(nb, padding=10)
     nb.add(wl, text='Wean litter')
     ttk.Label(wl, text='Puts weaned pups into empty cages with their parents recorded, and logs the litter.',
-              foreground='#555').grid(row=0, column=0, columnspan=4, sticky='w', pady=(0, 6))
+              foreground=THEME['mute']).grid(row=0, column=0, columnspan=4, sticky='w', pady=(0, 6))
     wl_pair = ttk.Combobox(wl, width=30, state='readonly')
     wl_dam = ttk.Combobox(wl, width=30, state='readonly')
     wl_born, wl_weaned, wl_pups = ttk.Entry(wl, width=14), ttk.Entry(wl, width=14), ttk.Entry(wl, width=6)
@@ -3312,10 +3543,10 @@ def run_gui(path=None):
     ttk.Checkbutton(wl, text='Unknown - flag the pups "needs genotyping" (untick to enter results right away)',
                     variable=wl_unknown).grid(row=9, column=1, sticky='w')
     wl_exp = tk.StringVar()
-    ttk.Label(wl, textvariable=wl_exp, foreground='#1F4E78', wraplength=620, justify='left').grid(
+    ttk.Label(wl, textvariable=wl_exp, foreground=THEME['info_ink'], wraplength=620, justify='left').grid(
         row=10, column=1, sticky='w', pady=(2, 0))
     wl_weaned.insert(0, dt.date.today().isoformat())
-    ttk.Button(wl, text='Save litter', command=lambda: save_litter()).grid(row=11, column=1, sticky='w', pady=8)
+    ttk.Button(wl, text='Save litter', style='Accent.TButton', command=lambda: save_litter()).grid(row=11, column=1, sticky='w', pady=8)
 
     def on_pair_pick(_=None):
         col = state['col']
@@ -3435,7 +3666,7 @@ def run_gui(path=None):
                 ttk.Checkbutton(box, variable=v, text=f'{ln}   ({loci})', command=update).grid(
                     row=i, column=0, sticky='w')
         result = tk.StringVar()
-        ttk.Label(d, textvariable=result, foreground='#1F4E78', wraplength=420, justify='left').grid(
+        ttk.Label(d, textvariable=result, foreground=THEME['info_ink'], wraplength=420, justify='left').grid(
             row=2, column=0, columnspan=2, sticky='w', padx=10, pady=6)
 
         def chosen():
@@ -3475,7 +3706,7 @@ def run_gui(path=None):
         bf = ttk.Frame(d)
         bf.grid(row=3, column=0, columnspan=2, sticky='e', padx=10, pady=10)
         ttk.Button(bf, text='Define a new line...', command=new_line).pack(side='left')
-        ttk.Button(bf, text='Use', command=use).pack(side='left', padx=6)
+        ttk.Button(bf, text='Use', style='Accent.TButton', command=use).pack(side='left', padx=6)
         ttk.Button(bf, text='Cancel', command=d.destroy).pack(side='left')
 
     @guard
@@ -3493,7 +3724,7 @@ def run_gui(path=None):
         cb = ttk.Combobox(d, values=[x for x in sorted(col.lines) if x != old], width=30, state='readonly')
         cb.grid(row=0, column=1, padx=10, pady=(10, 3))
         ttk.Label(d, text='All breeders, pairs, cages, mice and history rows of the first line get the second '
-                          'name, and the first line is removed from the Lines sheet.', foreground='#555',
+                          'name, and the first line is removed from the Lines sheet.', foreground=THEME['mute'],
                   wraplength=420).grid(row=1, column=0, columnspan=2, sticky='w', padx=10)
 
         @guard
@@ -3504,7 +3735,7 @@ def run_gui(path=None):
                 col.merge_lines(old, cb.get())
                 d.destroy()
                 refresh_all()
-        ttk.Button(d, text='Merge', command=ok).grid(row=2, column=1, sticky='e', padx=10, pady=10)
+        ttk.Button(d, text='Merge', style='Accent.TButton', command=ok).grid(row=2, column=1, sticky='e', padx=10, pady=10)
 
     @guard
     def edit_line_alleles():
@@ -3521,7 +3752,7 @@ def run_gui(path=None):
         e = ttk.Entry(d, width=40)
         e.insert(0, '; '.join(col.lines[ln]['loci']))
         e.grid(row=0, column=1, padx=10, pady=(10, 3))
-        ttk.Label(d, text='Renaming an allele does not rename genotypes already entered.', foreground='#555').grid(
+        ttk.Label(d, text='Renaming an allele does not rename genotypes already entered.', foreground=THEME['mute']).grid(
             row=1, column=0, columnspan=2, sticky='w', padx=10)
 
         @guard
@@ -3529,7 +3760,7 @@ def run_gui(path=None):
             col.update_line(ln, loci=[x.strip() for x in e.get().split(';') if x.strip()])
             d.destroy()
             refresh_all()
-        ttk.Button(d, text='Save', command=ok).grid(row=2, column=1, sticky='e', padx=10, pady=10)
+        ttk.Button(d, text='Save', style='Accent.TButton', command=ok).grid(row=2, column=1, sticky='e', padx=10, pady=10)
 
     def new_line_form(parent, on_done=None, name=''):
         col = state['col']
@@ -3561,7 +3792,7 @@ def run_gui(path=None):
                                                                   padx=(0, 10))
         r += 1
         ttk.Label(f, text='Alleles are the things you genotype, e.g. "Cx36-flox; PV-Cre". The line itself is '
-                          'always allowed as a partner.', foreground='#555', wraplength=440).grid(
+                          'always allowed as a partner.', foreground=THEME['mute'], wraplength=440).grid(
             row=r, column=0, columnspan=2, sticky='w', padx=10, pady=4)
         r += 1
 
@@ -3575,7 +3806,7 @@ def run_gui(path=None):
             refresh_all()
             if on_done:
                 on_done(nm)
-        ttk.Button(f, text='Add line', command=ok).grid(row=r, column=1, sticky='e', padx=10, pady=10)
+        ttk.Button(f, text='Add line', style='Accent.TButton', command=ok).grid(row=r, column=1, sticky='e', padx=10, pady=10)
 
     def gt_editor(parent, line, current):
         """One hom/het/wt/? picker per locus of the line. Returns (frame, rebuild(line), get())."""
@@ -3589,13 +3820,13 @@ def run_gui(path=None):
                 w.destroy()
             boxes.clear()
             if ln == 'C57Bl6J':
-                ttk.Label(frame, text='wild type for everything', foreground='#555').grid(row=0, column=0)
+                ttk.Label(frame, text='wild type for everything', foreground=THEME['mute']).grid(row=0, column=0)
                 return
             loci = col.loci_for(ln)
             loci += [k for k in current if k not in loci]
             if not loci:
                 ttk.Label(frame, text='No alleles set for this line (Lines sheet, last column)',
-                          foreground='#555').grid(row=0, column=0)
+                          foreground=THEME['mute']).grid(row=0, column=0)
                 return
             for i, lc in enumerate(loci):
                 ttk.Label(frame, text=lc).grid(row=i // 2, column=(i % 2) * 2, sticky='w', padx=(0, 4))
@@ -3785,7 +4016,7 @@ def run_gui(path=None):
         exp = col.expected_gt_text(c['sire'], c['dam']) if c else ''
         ttk.Label(d, text=(f'From the parents: {exp[5:]}. ' if exp else '') + GT_HELP +
                   '. Each mouse gets its own ID and the next free ear mark; genotype individual mice with '
-                  '"Genotyping results".', foreground='#555',
+                  '"Genotyping results".', foreground=THEME['mute'],
                   wraplength=360).grid(row=len(fields) + 1, column=1, sticky='w', padx=10)
         widgets['line'].bind('<<ComboboxSelected>>', lambda e: gbuild(widgets['line'].get()), add='+')
 
@@ -3823,7 +4054,7 @@ def run_gui(path=None):
                           gt=gget())
             d.destroy()
             refresh_all()
-        ttk.Button(d, text='Save', command=ok).grid(row=len(fields) + 2, column=1, sticky='e', padx=10, pady=10)
+        ttk.Button(d, text='Save', style='Accent.TButton', command=ok).grid(row=len(fields) + 2, column=1, sticky='e', padx=10, pady=10)
 
     # ---------- procedures / termination / history ----------
     def cage_label(cage):
@@ -3943,7 +4174,7 @@ def run_gui(path=None):
                                   cage=None if an else cage, animal=an, n=int(n_w.get()) if n_w else None)
             d.destroy()
             refresh_all()
-        ttk.Button(d, text='Save', command=ok).grid(row=r, column=1, sticky='e', padx=10, pady=10)
+        ttk.Button(d, text='Save', style='Accent.TButton', command=ok).grid(row=r, column=1, sticky='e', padx=10, pady=10)
 
     def terminate_dialog(cage=None, ids=None, preselect=()):
         """Stock cage (tick the mice) or breeders (pair members / selected breeders)."""
@@ -3982,7 +4213,7 @@ def run_gui(path=None):
             n_w = ttk.Spinbox(d, from_=1, to=c['count'], width=5)
             n_w.set(c['count'])
             n_w.grid(row=r, column=1, sticky='w', padx=10)
-            ttk.Label(d, text=f'of {c["count"]} (all = cage becomes empty)', foreground='#555').grid(
+            ttk.Label(d, text=f'of {c["count"]} (all = cage becomes empty)', foreground=THEME['mute']).grid(
                 row=r, column=1, sticky='w', padx=70)
             r += 1
         ent = {}
@@ -4015,7 +4246,7 @@ def run_gui(path=None):
             procs = col.procedures_for(cage=cage, birth=col.cage(cage)['birth'])
         ttk.Label(d, text='Procedures that go into the history (per mouse):\n' + (col.proc_summary(procs).replace('; ', '\n')
                                                                      or 'none logged'),
-                  foreground='#555', justify='left').grid(row=r, column=0, columnspan=2, sticky='w', padx=10,
+                  foreground=THEME['mute'], justify='left').grid(row=r, column=0, columnspan=2, sticky='w', padx=10,
                                                           pady=6)
         r += 1
 
@@ -4057,7 +4288,7 @@ def run_gui(path=None):
                 col.terminate_cage(cage, n, day, g['outcome'], **kw)
             d.destroy()
             refresh_all()
-        ttk.Button(d, text='Record', command=ok).grid(row=r, column=1, sticky='e', padx=10, pady=10)
+        ttk.Button(d, text='Record', style='Accent.TButton', command=ok).grid(row=r, column=1, sticky='e', padx=10, pady=10)
 
     def _sel_cage_or_msg():
         c = selected_cage()
@@ -4125,10 +4356,10 @@ def run_gui(path=None):
                 boxes[m['id']][lc] = cb
             hint = ', '.join(f'{k} {GT_SHORT.get(v.rstrip("*"), v)}' for k, v in exp.items() if v.endswith('*'))
             if hint:
-                ttk.Label(d, text=f'(certain from parents: {hint})', foreground='#888').grid(
+                ttk.Label(d, text=f'(certain from parents: {hint})', foreground=THEME['dim']).grid(
                     row=i, column=3 + len(loci), sticky='w')
             elif col.needs_genotyping(m['id']):
-                ttk.Label(d, text='needs genotyping', foreground='#B26B00').grid(row=i, column=3 + len(loci),
+                ttk.Label(d, text='needs genotyping', foreground=THEME['warn']).grid(row=i, column=3 + len(loci),
                                                                                  sticky='w')
         r = len(mice) + 2
         ent = {}
@@ -4158,7 +4389,7 @@ def run_gui(path=None):
                                  ent['notes'].get().strip(), log=log_v.get())
             d.destroy()
             refresh_all()
-        ttk.Button(d, text='Save results', command=ok).grid(row=r, column=3, columnspan=3, sticky='e', padx=10,
+        ttk.Button(d, text='Save results', style='Accent.TButton', command=ok).grid(row=r, column=3, columnspan=3, sticky='e', padx=10,
                                                             pady=10)
 
     def mouse_dialog(mid):
@@ -4198,7 +4429,7 @@ def run_gui(path=None):
         notes_e.grid(row=5, column=1, sticky='w', padx=10)
         procs = col.procedures_for_mouse(mid)
         ttk.Label(d, text='Procedures:\n' + (col.proc_summary(procs).replace('; ', '\n') or 'none'),
-                  foreground='#555', justify='left').grid(row=6, column=0, columnspan=2, sticky='w', padx=10,
+                  foreground=THEME['mute'], justify='left').grid(row=6, column=0, columnspan=2, sticky='w', padx=10,
                                                           pady=6)
 
         @guard
@@ -4214,7 +4445,7 @@ def run_gui(path=None):
                            cage=new_cage, todo=todo_v.get())
             d.destroy()
             refresh_all()
-        ttk.Button(d, text='Save', command=ok).grid(row=9, column=1, sticky='e', padx=10, pady=10)
+        ttk.Button(d, text='Save', style='Accent.TButton', command=ok).grid(row=9, column=1, sticky='e', padx=10, pady=10)
 
     @guard
     def history_of_selected_cage():
@@ -4653,7 +4884,7 @@ def run_gui(path=None):
         name_e = ttk.Entry(d, width=30)
         name_e.insert(0, cfg.get('user_name', ''))
         name_e.grid(row=r, column=1, sticky='w', padx=10, pady=3)
-        ttk.Label(d, text='(default "Person" in logs; recorded in the change log)', foreground='#555').grid(
+        ttk.Label(d, text='(default "Person" in logs; recorded in the change log)', foreground=THEME['mute']).grid(
             row=r, column=2, sticky='w')
         r += 1
         ttk.Label(d, text='Local backup folder').grid(row=r, column=0, sticky='w', padx=10)
@@ -4674,10 +4905,10 @@ def run_gui(path=None):
         link_e.grid(row=0, column=1, columnspan=2, sticky='w', padx=6, pady=2)
         ttk.Label(lf, text='Login ID file (.json)').grid(row=1, column=0, sticky='w')
         id_var = tk.StringVar()
-        ttk.Label(lf, textvariable=id_var, foreground='#333').grid(row=1, column=1, sticky='w', padx=6, pady=2)
+        ttk.Label(lf, textvariable=id_var, foreground=THEME['ink']).grid(row=1, column=1, sticky='w', padx=6, pady=2)
         acct_var = tk.StringVar()
         ttk.Label(lf, text='Google account').grid(row=2, column=0, sticky='w')
-        ttk.Label(lf, textvariable=acct_var, foreground='#333').grid(row=2, column=1, sticky='w', padx=6, pady=2)
+        ttk.Label(lf, textvariable=acct_var, foreground=THEME['ink']).grid(row=2, column=1, sticky='w', padx=6, pady=2)
 
         def show_pick():
             if pick['key']:
@@ -4782,7 +5013,7 @@ def run_gui(path=None):
                 messagebox.showinfo('Connected', f'Connected to "{title}".\n\nA local copy is kept in\n'
                                                  f"{state['col'].backup_folder()}\n\nUse \"Make a connection file\" "
                                                  f'to connect your colleagues.')
-        ttk.Button(bar1, text='Sign in with Google and connect', command=connect).pack(side='left')
+        ttk.Button(bar1, text='Sign in with Google and connect', style='Accent.TButton', command=connect).pack(side='left')
         ttk.Button(bar1, text='Use a connection file from a colleague...',
                    command=lambda: (save_settings(), d.destroy(), use_connection_file())).pack(side='left', padx=6)
         ttk.Button(bar1, text='Setup guide', command=open_guide).pack(side='left')
@@ -4798,7 +5029,7 @@ def run_gui(path=None):
                    command=lambda: (save_settings(), d.destroy(), open_file())).pack(side='left')
         ttk.Button(bar, text='Card photo settings...',
                    command=lambda: (save_settings(), d.destroy(), photo_settings())).pack(side='left', padx=6)
-        ttk.Button(bar, text='Save and close', command=lambda: (save_settings(), d.destroy(), set_status())).pack(
+        ttk.Button(bar, text='Save and close', style='Accent.TButton', command=lambda: (save_settings(), d.destroy(), set_status())).pack(
             side='right')
 
     def open_guide():
@@ -4887,7 +5118,7 @@ def run_gui(path=None):
         ttk.Label(d, text=('Restoring makes the chosen copy the current version' +
                            (' of the SHARED sheet for everyone' if col.remote else '') +
                            '. The current version is backed up first, so this can be undone.'),
-                  foreground='#555', wraplength=600).pack(anchor='w', padx=10, pady=6)
+                  foreground=THEME['mute'], wraplength=600).pack(anchor='w', padx=10, pady=6)
 
         @guard
         def ok():
@@ -4904,7 +5135,7 @@ def run_gui(path=None):
             messagebox.showinfo('Restore', 'Restored.')
         bf = ttk.Frame(d)
         bf.pack(fill='x', padx=10, pady=(0, 10))
-        ttk.Button(bf, text='Restore selected', command=ok).pack(side='right')
+        ttk.Button(bf, text='Restore selected', style='Accent.TButton', command=ok).pack(side='right')
         ttk.Button(bf, text='Open backup folder', command=lambda: __import__('webbrowser').open(
             'file://' + os.path.abspath(col.backup_folder()))).pack(side='left')
 
@@ -4981,7 +5212,7 @@ def run_gui(path=None):
             row=0, column=0, columnspan=3, sticky='w', padx=10, pady=(10, 2))
         ttk.Label(d, text='Get a free API key at aistudio.google.com -> API keys (see CAGE_CARDS_FORMAT.md). The key '
                           'stays on this computer. On the free plan Google may use the photos to improve its '
-                          'products, so photograph only the cards.', wraplength=520, foreground='#555',
+                          'products, so photograph only the cards.', wraplength=520, foreground=THEME['mute'],
                   justify='left').grid(row=1, column=0, columnspan=3, sticky='w', padx=10, pady=(0, 8))
         ttk.Label(d, text='Gemini API key').grid(row=2, column=0, sticky='w', padx=10)
         key_e = ttk.Entry(d, width=50, show='*')
@@ -5011,7 +5242,7 @@ def run_gui(path=None):
             'https://aistudio.google.com/apikey')).pack(side='left')
         ttk.Button(bar, text='Instructions file for the Gemini chat...',
                    command=lambda: save_chat_instructions(d)).pack(side='left', padx=6)
-        ttk.Button(bar, text='Save', command=save).pack(side='right')
+        ttk.Button(bar, text='Save', style='Accent.TButton', command=save).pack(side='right')
         ttk.Button(bar, text='Cancel', command=d.destroy).pack(side='right', padx=6)
         key_e.focus_set()
 
@@ -5115,15 +5346,15 @@ def run_gui(path=None):
         d.geometry('1080x580')
         d.grab_set()
         head_v, sub_v = tk.StringVar(), tk.StringVar()
-        ttk.Label(d, textvariable=head_v, font=('TkDefaultFont', 10, 'bold')).pack(anchor='w', padx=10,
+        ttk.Label(d, textvariable=head_v, style='Section.TLabel').pack(anchor='w', padx=10,
                                                                                     pady=(10, 0))
-        ttk.Label(d, textvariable=sub_v, foreground='#555').pack(anchor='w', padx=10, pady=(2, 6))
+        ttk.Label(d, textvariable=sub_v, foreground=THEME['mute']).pack(anchor='w', padx=10, pady=(2, 6))
         fr, tree = make_tree(d, ['Apply', 'Cage', 'What', 'In the app', 'On the card'],
                              [60, 70, 330, 230, 300], height=16)
         fr.pack(fill='both', expand=True, padx=10)
         tree.tag_configure('on', background='#E2F0D9')
         tree.tag_configure('off', background='#FFFFFF')
-        tree.tag_configure('info', background='#EDEDED', foreground='#555')
+        tree.tag_configure('info', background='#EDEDED', foreground=THEME['mute'])
         iids = {}
 
         def recompute():
@@ -5188,7 +5419,7 @@ def run_gui(path=None):
             d.destroy()
             refresh_all()
             messagebox.showinfo('Import', f'{len(todo)} changes applied to {n} cages.')
-        ttk.Button(bar, text='Apply ticked changes', command=ok).pack(side='right')
+        ttk.Button(bar, text='Apply ticked changes', style='Accent.TButton', command=ok).pack(side='right')
         ttk.Button(bar, text='Cancel', command=d.destroy).pack(side='right', padx=6)
         recompute()
         return {'add': lambda: card_form(d, add_card), 'win': d}
@@ -5219,11 +5450,11 @@ def run_gui(path=None):
         n_ev = len(data['events'])
         ttk.Label(d, text=f"{label}: {n_ev} log row{'' if n_ev == 1 else 's'}" +
                           (f" from {data.get('source')}" if data.get('source') else ''),
-                  font=('TkDefaultFont', 10, 'bold')).pack(anchor='w', padx=10, pady=(10, 0))
+                  style='Section.TLabel').pack(anchor='w', padx=10, pady=(10, 0))
         ttk.Label(d, text='Kivitel = taken out (goes to the Terminated history), áthelyezés = moved to another cage. '
                           'Check every row against the log page. Click a row to switch "Apply" on or off; grey rows '
                           'are information only. Rows with unclear readings start off. Applied rows are remembered '
-                          'and never applied again.', foreground='#555', wraplength=1080, justify='left').pack(
+                          'and never applied again.', foreground=THEME['mute'], wraplength=1080, justify='left').pack(
             anchor='w', padx=10, pady=(2, 6))
         fr, tree = make_tree(d, ['Apply', 'Date', 'Cage', 'What happens', 'In the app', 'On the log'],
                              [60, 90, 75, 420, 200, 250], height=15)
@@ -5231,7 +5462,7 @@ def run_gui(path=None):
         tree.tag_configure('on', background='#F8CBAD')
         tree.tag_configure('on_move', background='#E2F0D9')
         tree.tag_configure('off', background='#FFFFFF')
-        tree.tag_configure('info', background='#EDEDED', foreground='#555')
+        tree.tag_configure('info', background='#EDEDED', foreground=THEME['mute'])
         iids = {}
 
         def draw():
@@ -5287,7 +5518,7 @@ def run_gui(path=None):
                 d.destroy()
                 refresh_all()
             messagebox.showinfo('Animal-house log', f'{n} log row(s) applied.')
-        ttk.Button(bar, text='Apply ticked changes', command=ok).pack(side='right')
+        ttk.Button(bar, text='Apply ticked changes', style='Accent.TButton', command=ok).pack(side='right')
         ttk.Button(bar, text='Cancel', command=d.destroy).pack(side='right', padx=6)
         return d
 
@@ -5333,11 +5564,11 @@ def run_gui(path=None):
             ttk.Checkbutton(unsure_fr, text=k, variable=v).pack(side='left', padx=(0, 6))
         lab('Hard to read', unsure_fr)
         ttk.Label(f, text='Dates as on the card are fine (26.09.04 or 2026.09.04). Several pair dates: separate '
-                          'with commas.', foreground='#555').grid(row=row[0], column=0, columnspan=2, sticky='w',
+                          'with commas.', foreground=THEME['mute']).grid(row=row[0], column=0, columnspan=2, sticky='w',
                                                                   padx=10)
         row[0] += 1
         status = tk.StringVar()
-        ttk.Label(f, textvariable=status, foreground='#1F6F3F').grid(row=row[0], column=0, columnspan=2,
+        ttk.Label(f, textvariable=status, foreground=THEME['ok']).grid(row=row[0], column=0, columnspan=2,
                                                                      sticky='w', padx=10)
         row[0] += 1
 
@@ -5428,7 +5659,7 @@ def run_gui(path=None):
                 w['cage'].focus_set()
         bf = ttk.Frame(f)
         bf.grid(row=row[0], column=0, columnspan=2, sticky='e', padx=10, pady=10)
-        ttk.Button(bf, text='Add and enter next', command=lambda: add(False)).pack(side='left')
+        ttk.Button(bf, text='Add and enter next', style='Accent.TButton', command=lambda: add(False)).pack(side='left')
         ttk.Button(bf, text='Add and close', command=lambda: add(True)).pack(side='left', padx=6)
         ttk.Button(bf, text='Close', command=f.destroy).pack(side='left')
         w['cage'].focus_set()
@@ -5544,13 +5775,13 @@ def run_gui(path=None):
         line_cb.grid(row=2, column=1, sticky='w')
         if line not in col.lines:
             ttk.Label(d, text=f'"{line}" is a new mixed line - it will be added to the Lines sheet.',
-                      foreground='#1F4E78').grid(row=6, column=0, columnspan=2, sticky='w', padx=10)
+                      foreground=THEME['info_ink']).grid(row=6, column=0, columnspan=2, sticky='w', padx=10)
         ttk.Label(d, text='Set up (yyyy-mm-dd)').grid(row=3, column=0, sticky='w', padx=10)
         setup_e = ttk.Entry(d, width=14)
         setup_e.insert(0, dt.date.today().isoformat())
         setup_e.grid(row=3, column=1, sticky='w')
         ttk.Label(d, text='Animals from stock cages get new IDs (B###) and the cage count goes down by one.',
-                  foreground='#555').grid(row=4, column=0, columnspan=2, padx=10, pady=6, sticky='w')
+                  foreground=THEME['mute']).grid(row=4, column=0, columnspan=2, padx=10, pady=6, sticky='w')
 
         @guard
         def ok():
@@ -5572,7 +5803,7 @@ def run_gui(path=None):
             refresh_all()
             messagebox.showinfo('Pair created', f'Pair in {cage_cb.get()}: male {nm}, female(s) {", ".join(nfs)}.\n'
                                                 f'Write the new IDs on the cage card / ear tags.')
-        ttk.Button(d, text='Create', command=ok).grid(row=5, column=1, sticky='e', padx=10, pady=10)
+        ttk.Button(d, text='Create', style='Accent.TButton', command=ok).grid(row=5, column=1, sticky='e', padx=10, pady=10)
 
     @guard
     def run_suggest():
@@ -5639,7 +5870,7 @@ def run_gui(path=None):
         ttk.Label(d, text='Genotype').grid(row=len(fields), column=0, sticky='nw', padx=10, pady=3)
         gfr, gbuild, gget = gt_editor(d, b['line'], b.get('gt') or {})
         gfr.grid(row=len(fields), column=1, sticky='w', padx=10, pady=3)
-        ttk.Label(d, text=GT_HELP, foreground='#555', wraplength=330).grid(row=len(fields) + 1, column=1,
+        ttk.Label(d, text=GT_HELP, foreground=THEME['mute'], wraplength=330).grid(row=len(fields) + 1, column=1,
                                                                           sticky='w', padx=10)
         widgets['line'].bind('<<ComboboxSelected>>', lambda e: gbuild(widgets['line'].get()), add='+')
 
@@ -5665,7 +5896,7 @@ def run_gui(path=None):
             col.save_breeder(nb_)
             d.destroy()
             refresh_all()
-        ttk.Button(d, text='Save', command=ok).grid(row=len(fields) + 2, column=1, sticky='e', padx=10, pady=10)
+        ttk.Button(d, text='Save', style='Accent.TButton', command=ok).grid(row=len(fields) + 2, column=1, sticky='e', padx=10, pady=10)
 
     @guard
     def take_dialog():
@@ -5692,7 +5923,7 @@ def run_gui(path=None):
             getter['f'] = get
         cb.bind('<<ComboboxSelected>>', on_pick)
         ttk.Label(d, text='Ticked mice become Reserve breeders with B-IDs; parents and genotype come with them.',
-                  foreground='#555').grid(row=2, column=0, columnspan=2, padx=10, pady=4, sticky='w')
+                  foreground=THEME['mute']).grid(row=2, column=0, columnspan=2, padx=10, pady=4, sticky='w')
 
         @guard
         def ok():
@@ -5710,7 +5941,7 @@ def run_gui(path=None):
             d.destroy()
             refresh_all()
             messagebox.showinfo('Done', f'New Reserve breeders: {", ".join(ids_)}')
-        ttk.Button(d, text='Take', command=ok).grid(row=3, column=1, sticky='e', padx=10, pady=10)
+        ttk.Button(d, text='Take', style='Accent.TButton', command=ok).grid(row=3, column=1, sticky='e', padx=10, pady=10)
 
     @guard
     def save_litter():
